@@ -1,0 +1,55 @@
+# Constraints for Numato Saturn - Spartan 6 FPGA Development Board with DDR SDRAM 
+#  http://numato.com/fpga-boards/xilinx/spartan6/saturn-spartan-6-fpga-development-board-with-ddr-sdram.html
+
+NET "ulpi_clk60" PERIOD = 16666 ps;
+NET "main_clk" PERIOD = 10 ns;
+
+#NET "dbg*" IOSTANDARD = LVTTL;
+NET "ulpi_data[*]" IOSTANDARD = LVTTL;
+NET "ulpi_clk60" IOSTANDARD = LVTTL;
+NET "ulpi_dir" IOSTANDARD = LVTTL;
+NET "ulpi_nxt" IOSTANDARD = LVTTL;
+NET "ulpi_reset" IOSTANDARD = LVTTL;
+NET "ulpi_stp" IOSTANDARD = LVTTL;
+NET "LED" IOSTANDARD = LVTTL;
+#NET "rstn" IOSTANDARD = LVTTL;
+NET "main_clk" IOSTANDARD = LVTTL;
+
+NET "ulpi_clk60" LOC = R8;
+NET "ulpi_data[0]" LOC = T4;
+NET "ulpi_data[1]" LOC = V4;
+NET "ulpi_data[2]" LOC = U5;
+NET "ulpi_data[3]" LOC = V5;
+NET "ulpi_data[4]" LOC = T6;
+NET "ulpi_data[5]" LOC = V6;
+NET "ulpi_data[6]" LOC = N6;
+NET "ulpi_data[7]" LOC = P7;
+NET "ulpi_stp" LOC = V8;
+NET "ulpi_dir" LOC = U8;
+NET "ulpi_nxt" LOC = N8;
+NET "ulpi_reset" LOC = M8;
+NET "LED" LOC = T8;
+#NET "rstn" LOC = K13;
+#NET "rstn" PULLUP;
+#NET "rstn" CLOCK_DEDICATED_ROUTE = FALSE;
+
+#NET "dbg[0]" LOC = J13;
+#NET "dbg[1]" LOC = H13;
+#NET "dbg[2]" LOC = G16;
+#NET "dbg[3]" LOC = F17;
+#NET "dbg[4]" LOC = D17;
+#NET "dbg[5]" LOC = B16;
+#NET "dbg[6]" LOC = D14;
+#NET "dbg[7]" LOC = F13;
+#NET "dbg[8]" LOC = F12;
+#NET "dbg[9]" LOC = B12;
+#NET "dbg[10]" LOC = D11;
+#NET "dbg[11]" LOC = B11;
+#NET "dbg[12]" LOC = G9;
+#NET "dbg[13]" LOC = B9;
+#NET "dbg[14]" LOC = E7;
+#
+#NET "dbg_clk" LOC = C11;
+#NET "dbg_trig" LOC = A12;
+
+NET "main_clk" LOC = V10;
