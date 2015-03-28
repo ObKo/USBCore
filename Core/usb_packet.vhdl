@@ -183,146 +183,150 @@ begin
 
   RX_FSM : process(clk) is
   begin
-    if rst = '1' then
-      start_of_frame      <= '0';
-      crc_error           <= '0';
-      trn_start           <= '0';
-      rx_trn_end          <= '0';
-      rx_trn_hsk_received <= '0';
-      rx_state            <= S_Idle;
-    elsif rising_edge(clk) then
-      case rx_state is
-        when S_Idle =>
-          start_of_frame      <= '0';
-          crc_error           <= '0';
-          trn_start           <= '0';
-          rx_trn_end          <= '0';
-          rx_trn_hsk_received <= '0';
+    if rising_edge(clk) then
+      if rst = '1' then
+        start_of_frame      <= '0';
+        crc_error           <= '0';
+        trn_start           <= '0';
+        rx_trn_end          <= '0';
+        rx_trn_hsk_received <= '0';
+        rx_state            <= S_Idle;
+      else
+        case rx_state is
+          when S_Idle =>
+            start_of_frame      <= '0';
+            crc_error           <= '0';
+            trn_start           <= '0';
+            rx_trn_end          <= '0';
+            rx_trn_hsk_received <= '0';
 
-          if axis_rx_tvalid = '1' and rx_pid = (not axis_rx_tdata(7 downto 4)) then
-            if rx_pid = "0101" then
-              rx_state <= S_SOF;
-            elsif rx_pid(1 downto 0) = "01" then
-              trn_type <= rx_pid(3 downto 2);
-              rx_state <= S_Token;
-            elsif rx_pid(1 downto 0) = "11" then
-              rx_trn_data_type <= rx_pid(3 downto 2);
-              rx_state         <= S_Data;
-            elsif rx_pid(1 downto 0) = "10" then
-              rx_trn_hsk_type     <= rx_pid(3 downto 2);
-              rx_trn_hsk_received <= '1';
+            if axis_rx_tvalid = '1' and rx_pid = (not axis_rx_tdata(7 downto 4)) then
+              if rx_pid = "0101" then
+                rx_state <= S_SOF;
+              elsif rx_pid(1 downto 0) = "01" then
+                trn_type <= rx_pid(3 downto 2);
+                rx_state <= S_Token;
+              elsif rx_pid(1 downto 0) = "11" then
+                rx_trn_data_type <= rx_pid(3 downto 2);
+                rx_state         <= S_Data;
+              elsif rx_pid(1 downto 0) = "10" then
+                rx_trn_hsk_type     <= rx_pid(3 downto 2);
+                rx_trn_hsk_received <= '1';
+              end if;
             end if;
-          end if;
 
-        when S_SOF =>
-          if axis_rx_tvalid = '1' then
-            if rx_counter = 0 then
-              token_data(7 downto 0) <= axis_rx_tdata;
-            elsif rx_counter = 1 then
-              token_data(10 downto 8) <= axis_rx_tdata(2 downto 0);
-              token_crc5              <= axis_rx_tdata(7 downto 3);
+          when S_SOF =>
+            if axis_rx_tvalid = '1' then
+              if rx_counter = 0 then
+                token_data(7 downto 0) <= axis_rx_tdata;
+              elsif rx_counter = 1 then
+                token_data(10 downto 8) <= axis_rx_tdata(2 downto 0);
+                token_crc5              <= axis_rx_tdata(7 downto 3);
+              end if;
+            elsif usb_rx_active = '0' or usb_rx_error = '1' then
+              if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
+                start_of_frame <= '1';
+              end if;
+              if token_crc5 /= rx_crc5 then
+                crc_error <= '1';
+              end if;
+              rx_state <= S_Idle;
             end if;
-          elsif usb_rx_active = '0' or usb_rx_error = '1' then
-            if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
-              start_of_frame <= '1';
-            end if;
-            if token_crc5 /= rx_crc5 then
-              crc_error <= '1';
-            end if;
-            rx_state <= S_Idle;
-          end if;
 
-        when S_Token =>
-          if axis_rx_tvalid = '1' then
-            if rx_counter = 0 then
-              token_data(7 downto 0) <= axis_rx_tdata;
-            elsif rx_counter = 1 then
-              token_data(10 downto 8) <= axis_rx_tdata(2 downto 0);
-              token_crc5              <= axis_rx_tdata(7 downto 3);
+          when S_Token =>
+            if axis_rx_tvalid = '1' then
+              if rx_counter = 0 then
+                token_data(7 downto 0) <= axis_rx_tdata;
+              elsif rx_counter = 1 then
+                token_data(10 downto 8) <= axis_rx_tdata(2 downto 0);
+                token_crc5              <= axis_rx_tdata(7 downto 3);
+              end if;
+            elsif usb_rx_active = '0' or usb_rx_error = '1' then
+              if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
+                trn_start <= '1';
+              end if;
+              if token_crc5 /= rx_crc5 then
+                crc_error <= '1';
+              end if;
+              rx_state <= S_Idle;
             end if;
-          elsif usb_rx_active = '0' or usb_rx_error = '1' then
-            if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
-              trn_start <= '1';
-            end if;
-            if token_crc5 /= rx_crc5 then
-              crc_error <= '1';
-            end if;
-            rx_state <= S_Idle;
-          end if;
 
-        when S_Data =>
-          if axis_rx_tvalid = '1' then
-            if rx_counter = 0 then
-              rx_buf1 <= axis_rx_tdata;
-            elsif rx_counter = 1 then
-              rx_buf2 <= axis_rx_tdata;
-            else
-              rx_buf1 <= rx_buf2;
-              rx_buf2 <= axis_rx_tdata;
+          when S_Data =>
+            if axis_rx_tvalid = '1' then
+              if rx_counter = 0 then
+                rx_buf1 <= axis_rx_tdata;
+              elsif rx_counter = 1 then
+                rx_buf2 <= axis_rx_tdata;
+              else
+                rx_buf1 <= rx_buf2;
+                rx_buf2 <= axis_rx_tdata;
+              end if;
+            elsif usb_rx_active = '0' or usb_rx_error = '1' then
+              rx_trn_end <= '1';
+              if rx_data_crc = rx_crc16 then
+                crc_error <= '1';
+              end if;
+              rx_state <= S_Idle;
             end if;
-          elsif usb_rx_active = '0' or usb_rx_error = '1' then
-            rx_trn_end <= '1';
-            if rx_data_crc = rx_crc16 then
-              crc_error <= '1';
-            end if;
-            rx_state <= S_Idle;
-          end if;
 
-      end case;
+        end case;
+      end if;
     end if;
   end process;
 
   TX_FSM : process(clk) is
   begin
-    if rst = '1' then
-      tx_state <= S_Idle;
-    elsif rising_edge(clk) then
-      case tx_state is
-        when S_Idle =>
-          if tx_trn_send_hsk = '1' then
-            tx_state <= S_HSK;
-          elsif tx_trn_data_start = '1' then
-            tx_zero_packet <= tx_trn_data_last;
-            tx_state       <= S_DataPID;
-          end if;
-
-        when S_HSK =>
-          if axis_tx_tready = '1' then
-            tx_state <= S_HSK_Wait;
-          end if;
-
-        when S_HSK_Wait =>
-          if tx_trn_send_hsk = '0' then
-            tx_state <= S_Idle;
-          end if;
-
-        when S_DataPID =>
-          if axis_tx_tready = '1' then
-            if tx_zero_packet = '1' then
-              tx_state <= S_DataCRC1;
-            else
-              tx_state <= S_Data;
+    if rising_edge(clk) then
+      if rst = '1' then
+        tx_state <= S_Idle;
+      else
+        case tx_state is
+          when S_Idle =>
+            if tx_trn_send_hsk = '1' then
+              tx_state <= S_HSK;
+            elsif tx_trn_data_start = '1' then
+              tx_zero_packet <= tx_trn_data_last;
+              tx_state       <= S_DataPID;
             end if;
-          end if;
 
-        when S_Data =>
-          if axis_tx_tready = '1' and tx_trn_data_valid = '1' then
-            if tx_trn_data_last = '1' then
-              tx_state <= S_DataCRC1;
+          when S_HSK =>
+            if axis_tx_tready = '1' then
+              tx_state <= S_HSK_Wait;
             end if;
-          end if;
 
-        when S_DataCRC1 =>
-          if axis_tx_tready = '1' then
-            tx_state <= S_DataCRC2;
-          end if;
+          when S_HSK_Wait =>
+            if tx_trn_send_hsk = '0' then
+              tx_state <= S_Idle;
+            end if;
 
-        when S_DataCRC2 =>
-          if axis_tx_tready = '1' then
-            tx_state <= S_Idle;
-          end if;
+          when S_DataPID =>
+            if axis_tx_tready = '1' then
+              if tx_zero_packet = '1' then
+                tx_state <= S_DataCRC1;
+              else
+                tx_state <= S_Data;
+              end if;
+            end if;
 
-      end case;
+          when S_Data =>
+            if axis_tx_tready = '1' and tx_trn_data_valid = '1' then
+              if tx_trn_data_last = '1' then
+                tx_state <= S_DataCRC1;
+              end if;
+            end if;
+
+          when S_DataCRC1 =>
+            if axis_tx_tready = '1' then
+              tx_state <= S_DataCRC2;
+            end if;
+
+          when S_DataCRC2 =>
+            if axis_tx_tready = '1' then
+              tx_state <= S_Idle;
+            end if;
+
+        end case;
+      end if;
     end if;
   end process;
 

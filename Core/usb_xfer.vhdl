@@ -137,29 +137,31 @@ begin
   BIT_TOGGLING : process(clk) is
     variable i : integer;
   begin
-    if rst = '1' then
-      data_types <= (others => '0');
-    elsif rising_edge(clk) then
-      i := to_integer(unsigned(current_endpoint));
-      if reset_data_bit_toggling = '1' then
+    if rising_edge(clk) then
+      if rst = '1' then
         data_types <= (others => '0');
-      elsif state = S_ControlSetupACK then
-        data_types(i) <= '1';
-      elsif state = S_ControlDataIN_ACK then
-        if rx_trn_hsk_received = '1' and rx_trn_hsk_type = "00" then
-          data_types(i) <= not data_types(i);
-        end if;
-      elsif state = S_ControlStatusIN_ACK then
-        if rx_trn_hsk_received = '1' and rx_trn_hsk_type = "00" then
-          data_types(i) <= not data_types(i);
-        end if;
-      elsif state = S_BulkIN_ACK then
-        if rx_trn_hsk_received = '1' and rx_trn_hsk_type = "00" then
-          data_types(i) <= not data_types(i);
-        end if;
-      elsif state = S_BulkOUT_ACK then
-        if tx_trn_hsk_sended = '1' and ctl_status = "00" then
-          data_types(i) <= not data_types(i);
+      else
+        i := to_integer(unsigned(current_endpoint));
+        if reset_data_bit_toggling = '1' then
+          data_types <= (others => '0');
+        elsif state = S_ControlSetupACK then
+          data_types(i) <= '1';
+        elsif state = S_ControlDataIN_ACK then
+          if rx_trn_hsk_received = '1' and rx_trn_hsk_type = "00" then
+            data_types(i) <= not data_types(i);
+          end if;
+        elsif state = S_ControlStatusIN_ACK then
+          if rx_trn_hsk_received = '1' and rx_trn_hsk_type = "00" then
+            data_types(i) <= not data_types(i);
+          end if;
+        elsif state = S_BulkIN_ACK then
+          if rx_trn_hsk_received = '1' and rx_trn_hsk_type = "00" then
+            data_types(i) <= not data_types(i);
+          end if;
+        elsif state = S_BulkOUT_ACK then
+          if tx_trn_hsk_sended = '1' and ctl_status = "00" then
+            data_types(i) <= not data_types(i);
+          end if;
         end if;
       end if;
     end if;
@@ -167,204 +169,206 @@ begin
 
   FSM : process(clk) is
   begin
-    if rst = '1' then
-      state    <= S_Idle;
-      ctl_xfer <= '0';
-    elsif rising_edge(clk) then
-      case state is
-        when S_Idle =>
-          ctl_xfer     <= '0';
-          blk_in_xfer  <= '0';
-          blk_out_xfer <= '0';
+    if rising_edge(clk) then
+      if rst = '1' then
+        state <= S_Idle;
+        ctl_xfer <= '0';
+      else
+        case state is
+          when S_Idle =>
+            ctl_xfer     <= '0';
+            blk_in_xfer  <= '0';
+            blk_out_xfer <= '0';
 
-          if trn_start = '1' then
-            if trn_type = "11" then
-              state            <= S_ControlSetup;
-              current_endpoint <= trn_endpoint;
-            elsif trn_type = "10" then
-              current_endpoint <= trn_endpoint;
-              if blk_xfer_in_has_data = '1' then
-                blk_in_xfer       <= '1';
-                tx_trn_data_start <= '1';
-                tx_counter        <= (others => '0');
-                state             <= S_BulkIN;
-              else
-                ctl_status <= "11";
-                state      <= S_BulkIN_MyACK;
+            if trn_start = '1' then
+              if trn_type = "11" then
+                state            <= S_ControlSetup;
+                current_endpoint <= trn_endpoint;
+              elsif trn_type = "10" then
+                current_endpoint <= trn_endpoint;
+                if blk_xfer_in_has_data = '1' then
+                  blk_in_xfer       <= '1';
+                  tx_trn_data_start <= '1';
+                  tx_counter        <= (others => '0');
+                  state             <= S_BulkIN;
+                else
+                  ctl_status <= "11";
+                  state      <= S_BulkIN_MyACK;
+                end if;
+              elsif trn_type = "00" then
+                blk_out_xfer     <= '1';
+                current_endpoint <= trn_endpoint;
+                if blk_xfer_out_ready_read = '1' then
+                  ctl_status <= "00";
+                else
+                  ctl_status <= "11";
+                end if;
+                state <= S_BulkOUT;
               end if;
-            elsif trn_type = "00" then
-              blk_out_xfer     <= '1';
-              current_endpoint <= trn_endpoint;
-              if blk_xfer_out_ready_read = '1' then
+            end if;
+
+          when S_ControlSetup =>
+            if rx_trn_valid = '1' then
+              if rx_counter = 0 then
+                ctl_xfer_type_int <= rx_trn_data;
+              elsif rx_counter = 1 then
+                ctl_xfer_request <= rx_trn_data;
+              elsif rx_counter = 2 then
+                ctl_xfer_value(7 downto 0) <= rx_trn_data;
+              elsif rx_counter = 3 then
+                ctl_xfer_value(15 downto 8) <= rx_trn_data;
+              elsif rx_counter = 4 then
+                ctl_xfer_index(7 downto 0) <= rx_trn_data;
+              elsif rx_counter = 5 then
+                ctl_xfer_index(15 downto 8) <= rx_trn_data;
+              elsif rx_counter = 6 then
+                ctl_xfer_length_int(7 downto 0) <= rx_trn_data;
+              elsif rx_counter = 7 then
+                ctl_xfer_length_int(15 downto 8) <= rx_trn_data;
+                state                            <= S_ControlSetupACK;
+                ctl_xfer                         <= '1';
+              end if;
+            end if;
+
+          when S_ControlSetupACK =>
+            if tx_trn_hsk_sended = '1' then
+              if ctl_xfer_length_int = 0 then
+                if ctl_xfer_type_int(7) = '1' then
+                  state <= S_ControlStatusOUT;
+                else
+                  state <= S_ControlStatusIN;
+                end if;
+              elsif ctl_xfer_type_int(7) = '1' then
+                state      <= S_ControlWaitDataIN;
+                tx_counter <= (others => '0');
+              end if;
+            end if;
+
+          when S_ControlWaitDataIN =>
+            -- IN Token
+            if trn_start = '1' and trn_type = "10" then
+              if ctl_xfer_accept = '1' then
+                state <= S_ControlDataIN;
+              else
+                state <= S_ControlDataIN_Z;
+              end if;
+              tx_trn_data_start <= '1';
+            end if;
+
+          when S_ControlDataIN =>
+            if ctl_xfer_data_in_valid = '1' and tx_trn_data_ready = '1' then
+              if tx_counter(5 downto 0) = 63 or tx_counter = ctl_xfer_length_int - 1 or
+                ctl_xfer_data_in_last = '1' then
+                tx_trn_data_start <= '0';
+                state             <= S_ControlDataIN_ACK;
+                if ctl_xfer_data_in_last = '1' then
+                  ctl_xfer_eop <= '1';
+                end if;
+              end if;
+              tx_counter <= tx_counter + 1;
+            end if;
+
+          when S_ControlDataIN_Z =>
+            tx_trn_data_start <= '0';
+            ctl_xfer_eop      <= '1';
+            state             <= S_ControlDataIN_ACK;
+
+          when S_ControlDataIN_ACK =>
+            if rx_trn_hsk_received = '1' then
+              if rx_trn_hsk_type = "00" then
+                if tx_counter = ctl_xfer_length_int or ctl_xfer_eop = '1' then
+                  ctl_xfer_eop <= '0';
+                  state        <= S_ControlStatusOUT;
+                else
+                  state <= S_ControlWaitDataIN;
+                end if;
+              else
+                state <= S_Idle;
+              end if;
+            end if;
+
+          when S_ControlStatusOUT =>
+            -- OUT Token
+            if trn_start = '1' and trn_type = "00" then
+              state <= S_ControlStatusOUT_D;
+            end if;
+
+          when S_ControlStatusOUT_D =>
+            if rx_trn_end = '1' then
+              state <= S_ControlStatusOUT_ACK;
+              if ctl_xfer_done = '1' then
                 ctl_status <= "00";
               else
-                ctl_status <= "11";
+                ctl_status <= "10";
               end if;
-              state <= S_BulkOUT;
             end if;
-          end if;
 
-        when S_ControlSetup =>
-          if rx_trn_valid = '1' then
-            if rx_counter = 0 then
-              ctl_xfer_type_int <= rx_trn_data;
-            elsif rx_counter = 1 then
-              ctl_xfer_request <= rx_trn_data;
-            elsif rx_counter = 2 then
-              ctl_xfer_value(7 downto 0) <= rx_trn_data;
-            elsif rx_counter = 3 then
-              ctl_xfer_value(15 downto 8) <= rx_trn_data;
-            elsif rx_counter = 4 then
-              ctl_xfer_index(7 downto 0) <= rx_trn_data;
-            elsif rx_counter = 5 then
-              ctl_xfer_index(15 downto 8) <= rx_trn_data;
-            elsif rx_counter = 6 then
-              ctl_xfer_length_int(7 downto 0) <= rx_trn_data;
-            elsif rx_counter = 7 then
-              ctl_xfer_length_int(15 downto 8) <= rx_trn_data;
-              state                            <= S_ControlSetupACK;
-              ctl_xfer                         <= '1';
-            end if;
-          end if;
-
-        when S_ControlSetupACK =>
-          if tx_trn_hsk_sended = '1' then
-            if ctl_xfer_length_int = 0 then
-              if ctl_xfer_type_int(7) = '1' then
+          when S_ControlStatusOUT_ACK =>
+            if tx_trn_hsk_sended = '1' then
+              if ctl_status = "10" then
                 state <= S_ControlStatusOUT;
               else
-                state <= S_ControlStatusIN;
-              end if;
-            elsif ctl_xfer_type_int(7) = '1' then
-              state      <= S_ControlWaitDataIN;
-              tx_counter <= (others => '0');
-            end if;
-          end if;
-
-        when S_ControlWaitDataIN =>
-          -- IN Token
-          if trn_start = '1' and trn_type = "10" then
-            if ctl_xfer_accept = '1' then
-              state <= S_ControlDataIN;
-            else
-              state <= S_ControlDataIN_Z;
-            end if;
-            tx_trn_data_start <= '1';
-          end if;
-
-        when S_ControlDataIN =>
-          if ctl_xfer_data_in_valid = '1' and tx_trn_data_ready = '1' then
-            if tx_counter(5 downto 0) = 63 or tx_counter = ctl_xfer_length_int - 1 or
-              ctl_xfer_data_in_last = '1' then
-              tx_trn_data_start <= '0';
-              state             <= S_ControlDataIN_ACK;
-              if ctl_xfer_data_in_last = '1' then
-                ctl_xfer_eop <= '1';
+                state <= S_Idle;
               end if;
             end if;
-            tx_counter <= tx_counter + 1;
-          end if;
 
-        when S_ControlDataIN_Z =>
-          tx_trn_data_start <= '0';
-          ctl_xfer_eop      <= '1';
-          state             <= S_ControlDataIN_ACK;
-
-        when S_ControlDataIN_ACK =>
-          if rx_trn_hsk_received = '1' then
-            if rx_trn_hsk_type = "00" then
-              if tx_counter = ctl_xfer_length_int or ctl_xfer_eop = '1' then
-                ctl_xfer_eop <= '0';
-                state        <= S_ControlStatusOUT;
+          when S_ControlStatusIN =>
+            -- IN Token
+            if trn_start = '1' and trn_type = "10" then
+              if ctl_xfer_done = '1' then
+                tx_trn_data_start <= '1';
+                state             <= S_ControlStatusIN_D;
               else
-                state <= S_ControlWaitDataIN;
+                ctl_status <= "11";
+                state      <= S_ControlStatusIN_MyACK;
               end if;
-            else
+            end if;
+
+          when S_ControlStatusIN_MyACK =>
+            if tx_trn_hsk_sended = '1' then
               state <= S_Idle;
             end if;
-          end if;
 
-        when S_ControlStatusOUT =>
-          -- OUT Token
-          if trn_start = '1' and trn_type = "00" then
-            state <= S_ControlStatusOUT_D;
-          end if;
+          when S_ControlStatusIN_D =>
+            tx_trn_data_start <= '0';
+            state             <= S_ControlStatusIN_ACK;
 
-        when S_ControlStatusOUT_D =>
-          if rx_trn_end = '1' then
-            state <= S_ControlStatusOUT_ACK;
-            if ctl_xfer_done = '1' then
-              ctl_status <= "00";
-            else
-              ctl_status <= "10";
-            end if;
-          end if;
-
-        when S_ControlStatusOUT_ACK =>
-          if tx_trn_hsk_sended = '1' then
-            if ctl_status = "10" then
-              state <= S_ControlStatusOUT;
-            else
+          when S_ControlStatusIN_ACK =>
+            if rx_trn_hsk_received = '1' then
               state <= S_Idle;
             end if;
-          end if;
 
-        when S_ControlStatusIN =>
-          -- IN Token
-          if trn_start = '1' and trn_type = "10" then
-            if ctl_xfer_done = '1' then
-              tx_trn_data_start <= '1';
-              state             <= S_ControlStatusIN_D;
-            else
-              ctl_status <= "11";
-              state      <= S_ControlStatusIN_MyACK;
+          when S_BulkIN =>
+            if blk_xfer_in_data_valid = '1' and tx_trn_data_ready = '1' then
+              if tx_counter(5 downto 0) = 63 or blk_xfer_in_data_last = '1' then
+                tx_trn_data_start <= '0';
+                state             <= S_BulkIN_ACK;
+              end if;
+              tx_counter <= tx_counter + 1;
             end if;
-          end if;
 
-        when S_ControlStatusIN_MyACK =>
-          if tx_trn_hsk_sended = '1' then
-            state <= S_Idle;
-          end if;
-
-        when S_ControlStatusIN_D =>
-          tx_trn_data_start <= '0';
-          state             <= S_ControlStatusIN_ACK;
-
-        when S_ControlStatusIN_ACK =>
-          if rx_trn_hsk_received = '1' then
-            state <= S_Idle;
-          end if;
-
-        when S_BulkIN =>
-          if blk_xfer_in_data_valid = '1' and tx_trn_data_ready = '1' then
-            if tx_counter(5 downto 0) = 63 or blk_xfer_in_data_last = '1' then
-              tx_trn_data_start <= '0';
-              state             <= S_BulkIN_ACK;
+          when S_BulkIN_ACK =>
+            if rx_trn_hsk_received = '1' then
+              state <= S_Idle;
             end if;
-            tx_counter <= tx_counter + 1;
-          end if;
 
-        when S_BulkIN_ACK =>
-          if rx_trn_hsk_received = '1' then
-            state <= S_Idle;
-          end if;
+          when S_BulkIN_MyACK =>
+            if tx_trn_hsk_sended = '1' then
+              state <= S_Idle;
+            end if;
 
-        when S_BulkIN_MyACK =>
-          if tx_trn_hsk_sended = '1' then
-            state <= S_Idle;
-          end if;
+          when S_BulkOUT =>
+            if rx_trn_end = '1' then
+              state <= S_BulkOUT_ACK;
+            end if;
 
-        when S_BulkOUT =>
-          if rx_trn_end = '1' then
-            state <= S_BulkOUT_ACK;
-          end if;
+          when S_BulkOUT_ACK =>
+            if tx_trn_hsk_sended = '1' then
+              state <= S_Idle;
+            end if;
 
-        when S_BulkOUT_ACK =>
-          if tx_trn_hsk_sended = '1' then
-            state <= S_Idle;
-          end if;
-
-      end case;
+        end case;
+      end if;
     end if;
   end process;
 

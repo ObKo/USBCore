@@ -263,41 +263,43 @@ begin
 
   FSM : process(clk) is
   begin
-    if rst = '1' then
-      state <= S_Idle;
-    elsif rising_edge(clk) then
-      case state is
-        when S_Idle =>
-          reset_data_bit_toggling <= '0';
-          if ctl_xfer = '1' then
-            if req_type = "001" or req_type = "011" or req_type = "101" then
-              state <= S_GetDescriptor;
-            elsif req_type = "010" then
-              state <= S_SetAddress;
-            elsif req_type = "100" then
-              current_configuration <= ctl_xfer_value(7 downto 0);
-              state                 <= S_SetConfiguration;
+    if rising_edge(clk) then
+      if rst = '1' then
+        state <= S_Idle;
+      else
+        case state is
+          when S_Idle =>
+            reset_data_bit_toggling <= '0';
+            if ctl_xfer = '1' then
+              if req_type = "001" or req_type = "011" or req_type = "101" then
+                state <= S_GetDescriptor;
+              elsif req_type = "010" then
+                state <= S_SetAddress;
+              elsif req_type = "100" then
+                current_configuration <= ctl_xfer_value(7 downto 0);
+                state                 <= S_SetConfiguration;
+              end if;
             end if;
-          end if;
 
-        when S_SetAddress =>
-          if ctl_xfer = '0' then
-            state <= S_Idle;
-          end if;
+          when S_SetAddress =>
+            if ctl_xfer = '0' then
+              state <= S_Idle;
+            end if;
 
-        when S_GetDescriptor =>
-          if ctl_xfer = '0' then
-            state <= S_Idle;
-          end if;
+          when S_GetDescriptor =>
+            if ctl_xfer = '0' then
+              state <= S_Idle;
+            end if;
 
-        when S_SetConfiguration =>
-          if ctl_xfer = '0' then
-            reset_data_bit_toggling <= '1';
-            configured              <= '1';
-            state                   <= S_Idle;
-          end if;
+          when S_SetConfiguration =>
+            if ctl_xfer = '0' then
+              reset_data_bit_toggling <= '1';
+              configured              <= '1';
+              state                   <= S_Idle;
+            end if;
 
-      end case;
+        end case;
+      end if;
     end if;
   end process;
 
