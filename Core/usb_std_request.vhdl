@@ -60,7 +60,9 @@ entity usb_std_request is
     current_configuration   : out std_logic_vector(7 downto 0);
     configured              : out std_logic := '0';
 
-    reset_data_bit_toggling : out std_logic
+    reset_data_bit_toggling : out std_logic;
+    
+    standart_request        : out std_logic
     );
 end usb_std_request;
 
@@ -214,6 +216,10 @@ architecture usb_std_request of usb_std_request is
   -- 100 - Set configuration
   -- 101 - Get string descriptor
   signal req_type     : std_logic_vector(2 downto 0);
+  
+  signal is_std_req   : std_logic;
+  signal is_dev_req   : std_logic;
+  signal handle_req   : std_logic;
 
 begin
   MEM_ADDRESSER : process(clk) is
@@ -295,12 +301,22 @@ begin
     end if;
   end process;
 
-  req_type <= "001" when ctl_xfer_type = X"80" and ctl_xfer_request = X"06" and ctl_xfer_value(15 downto 8) = X"01" else
-              "010" when ctl_xfer_type = X"00" and ctl_xfer_request = X"05" else
-              "011" when ctl_xfer_type = X"80" and ctl_xfer_request = X"06" and ctl_xfer_value(15 downto 8) = X"02" else
-              "100" when ctl_xfer_type = X"00" and ctl_xfer_request = X"09" else
-              "101" when ctl_xfer_type = X"80" and ctl_xfer_request = X"06" and ctl_xfer_value(15 downto 8) = X"03" else
+  req_type <= "001" when handle_req = '1' and ctl_xfer_request = X"06" and ctl_xfer_value(15 downto 8) = X"01" else
+              "010" when handle_req = '1' and ctl_xfer_request = X"05" else
+              "011" when handle_req = '1' and ctl_xfer_request = X"06" and ctl_xfer_value(15 downto 8) = X"02" else
+              "100" when handle_req = '1' and ctl_xfer_request = X"09" else
+              "101" when handle_req = '1' and ctl_xfer_request = X"06" and ctl_xfer_value(15 downto 8) = X"03" else
               "000";
+              
+  is_std_req <= '1' when ctl_xfer_endpoint = X"0" and ctl_xfer_type(6 downto 5) = "00" else
+                '0';
+                
+  is_dev_req <= '1' when ctl_xfer_type(4 downto 0) = "00000" else
+                '0';
+                
+  handle_req <= is_std_req AND is_dev_req;
+              
+  standart_request <= is_std_req;
 
   ctl_xfer_data_in_valid <= '1' when state = S_GetDescriptor else
                             '0';

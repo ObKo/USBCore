@@ -141,6 +141,10 @@ architecture usb_tlp of usb_tlp is
   signal ctl_xfer_accept_int         : std_logic;
   signal ctl_xfer_int                : std_logic;
   signal ctl_xfer_done_int           : std_logic;
+  
+  signal ctl_xfer_accept_std         : std_logic;
+  signal ctl_xfer_std                : std_logic;
+  signal ctl_xfer_done_std           : std_logic;
 
   signal ctl_xfer_data_out_int       : std_logic_vector(7 downto 0);
   signal ctl_xfer_data_out_valid_int : std_logic;
@@ -149,6 +153,10 @@ architecture usb_tlp of usb_tlp is
   signal ctl_xfer_data_in_valid_int  : std_logic;
   signal ctl_xfer_data_in_last_int   : std_logic;
   signal ctl_xfer_data_in_ready_int  : std_logic;
+  
+  signal ctl_xfer_data_in_std        : std_logic_vector(7 downto 0);
+  signal ctl_xfer_data_in_valid_std  : std_logic;
+  signal ctl_xfer_data_in_last_std   : std_logic;
 
   signal reset_data_bit_toggling     : std_logic;
 
@@ -156,6 +164,8 @@ architecture usb_tlp of usb_tlp is
 
   signal usb_reset_int               : std_logic;
   signal usb_crc_error_int           : std_logic;
+  
+  signal standart_request            : std_logic;
 
   component ulpi_port is
     port (
@@ -336,7 +346,8 @@ architecture usb_tlp of usb_tlp is
       current_configuration   : out std_logic_vector(7 downto 0);
       configured              : out std_logic;
 
-      reset_data_bit_toggling : out std_logic
+      reset_data_bit_toggling : out std_logic;
+      standart_request        : out std_logic
       );
   end component;
 
@@ -512,22 +523,23 @@ begin
       ctl_xfer_value          => ctl_xfer_value_int,
       ctl_xfer_index          => ctl_xfer_index_int,
       ctl_xfer_length         => ctl_xfer_length_int,
-      ctl_xfer_accept         => ctl_xfer_accept_int,
+      ctl_xfer_accept         => ctl_xfer_accept_std,
       ctl_xfer                => ctl_xfer_int,
-      ctl_xfer_done           => ctl_xfer_done_int,
+      ctl_xfer_done           => ctl_xfer_done_std,
 
       ctl_xfer_data_out       => ctl_xfer_data_out_int,
       ctl_xfer_data_out_valid => ctl_xfer_data_out_valid_int,
 
-      ctl_xfer_data_in        => ctl_xfer_data_in_int,
-      ctl_xfer_data_in_valid  => ctl_xfer_data_in_valid_int,
-      ctl_xfer_data_in_last   => ctl_xfer_data_in_last_int,
+      ctl_xfer_data_in        => ctl_xfer_data_in_std,
+      ctl_xfer_data_in_valid  => ctl_xfer_data_in_valid_std,
+      ctl_xfer_data_in_last   => ctl_xfer_data_in_last_std,
       ctl_xfer_data_in_ready  => ctl_xfer_data_in_ready_int,
 
       current_configuration   => current_configuration,
       configured              => usb_configured,
 
-      reset_data_bit_toggling => reset_data_bit_toggling
+      reset_data_bit_toggling => reset_data_bit_toggling,
+      standart_request        => standart_request
       );
 
   STATE_CONTROLLER : usb_state
@@ -545,4 +557,31 @@ begin
   usb_clk       <= ulpi_clk60;
   usb_reset     <= usb_reset_int;
   usb_crc_error <= usb_crc_error_int;
+  
+  ctl_xfer_endpoint <= ctl_xfer_endpoint_int;
+  ctl_xfer_type     <= ctl_xfer_type_int;
+  ctl_xfer_request  <= ctl_xfer_request_int;
+  ctl_xfer_value    <= ctl_xfer_value_int;
+  ctl_xfer_index    <= ctl_xfer_index_int;
+  ctl_xfer_length   <= ctl_xfer_length_int;
+  
+  ctl_xfer_accept_int <= ctl_xfer_accept_std when standart_request = '1' else
+                         ctl_xfer_accept;
+  ctl_xfer            <= ctl_xfer_int when standart_request = '0' else
+                         '0';
+  ctl_xfer_done_int   <= ctl_xfer_done_std when standart_request = '1' else
+                         ctl_xfer_done;
+                         
+  ctl_xfer_data_out       <= ctl_xfer_data_out_int;
+  ctl_xfer_data_out_valid <= ctl_xfer_data_out_valid_int when standart_request = '0' else
+                             '0';
+                             
+  ctl_xfer_data_in_int       <= ctl_xfer_data_in_std when standart_request = '1' else
+                                ctl_xfer_data_in;
+  ctl_xfer_data_in_valid_int <= ctl_xfer_data_in_valid_std when standart_request = '1' else
+                                ctl_xfer_data_in_valid;
+  ctl_xfer_data_in_last_int  <= ctl_xfer_data_in_last_std when standart_request = '1' else
+                                ctl_xfer_data_in_last;
+  ctl_xfer_data_in_ready     <= ctl_xfer_data_in_ready_int when standart_request = '0' else
+                                '0';
 end usb_tlp;
