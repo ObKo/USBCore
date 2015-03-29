@@ -30,6 +30,10 @@ use IEEE.NUMERIC_STD.ALL;
 library UNISIM;
 use UNISIM.VCOMPONENTS.ALL;
 
+library work;
+use work.USBCore.all;
+use work.USBExtra.all;
+
 entity ep1_loopback is
   port (
     led         : out   std_logic;
@@ -105,107 +109,6 @@ architecture ep1_loopback of ep1_loopback is
   signal ep1_out_axis_tlast     : std_logic;
   
   signal led_counter            : std_logic_vector(25 downto 0);
-  
-  component usb_tlp is
-    generic (
-    VENDOR_ID               : std_logic_vector(15 downto 0) := X"DEAD";
-    PRODUCT_ID              : std_logic_vector(15 downto 0) := X"BEEF";
-    MANUFACTURER            : string := "";
-    PRODUCT                 : string := "";
-    SERIAL                  : string := ""
-  );
-  port (
-    ulpi_data_in            : in  std_logic_vector(7 downto 0);
-    ulpi_data_out           : out std_logic_vector(7 downto 0);
-    ulpi_dir                : in  std_logic;
-    ulpi_nxt                : in  std_logic;
-    ulpi_stp                : out std_logic;
-    ulpi_reset              : out std_logic;
-    ulpi_clk60              : in  std_logic;
-    
-    usb_clk                 : out std_logic;
-    usb_reset               : out std_logic;
-    
-    usb_idle                : out std_logic;
-    usb_suspend             : out std_logic;
-    usb_configured          : out std_logic;
-    usb_crc_error           : out std_logic;
-    usb_sof                 : out std_logic;
-    
-    ctl_xfer_endpoint       : out std_logic_vector(3 downto 0);
-    ctl_xfer_type           : out std_logic_vector(7 downto 0);
-    ctl_xfer_request        : out std_logic_vector(7 downto 0);
-    ctl_xfer_value          : out std_logic_vector(15 downto 0);
-    ctl_xfer_index          : out std_logic_vector(15 downto 0);
-    ctl_xfer_length         : out std_logic_vector(15 downto 0);
-    ctl_xfer_accept         : in  std_logic;
-    ctl_xfer                : out std_logic;
-    ctl_xfer_done           : in  std_logic;
-    
-    ctl_xfer_data_out       : out std_logic_vector(7 downto 0);
-    ctl_xfer_data_out_valid : out std_logic;
-    
-    ctl_xfer_data_in        : in  std_logic_vector(7 downto 0);
-    ctl_xfer_data_in_valid  : in  std_logic;
-    ctl_xfer_data_in_last   : in  std_logic;
-    ctl_xfer_data_in_ready  : out std_logic;
-        
-    blk_xfer_endpoint       : out std_logic_vector(3 downto 0);
-    blk_in_xfer             : out std_logic;
-    blk_out_xfer            : out std_logic;
-    
-    blk_xfer_in_has_data    : in  std_logic;
-    blk_xfer_in_data        : in  std_logic_vector(7 downto 0);
-    blk_xfer_in_data_valid  : in  std_logic;
-    blk_xfer_in_data_ready  : out std_logic;
-    blk_xfer_in_data_last   : in  std_logic;
-    
-    blk_xfer_out_ready_read : in  std_logic;
-    blk_xfer_out_data       : out std_logic_vector(7 downto 0);
-    blk_xfer_out_data_valid : out std_logic
-  );
-  end component;
-  
-  component blk_ep_out_ctl is
-  port (
-    rst                     : in  std_logic;
-    usb_clk                 : in  std_logic;
-    axis_clk                : in  std_logic;
-    
-    blk_out_xfer            : in  std_logic;
-
-    blk_xfer_out_ready_read : out std_logic;
-    blk_xfer_out_data       : in  std_logic_vector(7 downto 0);
-    blk_xfer_out_data_valid : in  std_logic;
-    
-    axis_tdata              : out std_logic_vector(7 downto 0);
-    axis_tvalid             : out std_logic;
-    axis_tready             : in  std_logic;
-    axis_tlast              : out std_logic
-  );
-  end component;
-  
-  component blk_ep_in_ctl is
-  port (
-    rst                     : in  std_logic;
-    usb_clk                 : in  std_logic;
-    axis_clk                : in  std_logic;
-
-    blk_in_xfer             : in  std_logic;
-    
-    blk_xfer_in_has_data    : out std_logic;
-    blk_xfer_in_data        : out std_logic_vector(7 downto 0);
-    blk_xfer_in_data_valid  : out std_logic;
-    blk_xfer_in_data_ready  : in  std_logic;
-    blk_xfer_in_data_last   : out std_logic;
-    
-    axis_tdata              : in  std_logic_vector(7 downto 0);
-    axis_tvalid             : in  std_logic;
-    axis_tready             : out std_logic;
-    axis_tlast              : in  std_logic
-  );
-  end component;
-
 begin
   ULPI_IO: for i in 7 downto 0 generate
   begin

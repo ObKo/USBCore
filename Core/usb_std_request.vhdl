@@ -27,6 +27,9 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.NUMERIC_STD.all;
 
+library work;
+use work.USBCore.all;
+
 entity usb_std_request is
   generic (
     VENDOR_ID    : std_logic_vector(15 downto 0) := X"DEAD";
@@ -67,8 +70,6 @@ entity usb_std_request is
 end usb_std_request;
 
 architecture usb_std_request of usb_std_request is
-  type BYTE_ARRAY is array(natural range <>) of std_logic_vector(7 downto 0);
-
   function indexOrZero(s : in string; i : in std_logic_vector)
     return std_logic_vector is
   begin
