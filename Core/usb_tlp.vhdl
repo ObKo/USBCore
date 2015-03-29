@@ -36,7 +36,28 @@ entity usb_tlp is
     PRODUCT_ID   : std_logic_vector(15 downto 0) := X"BEEF";
     MANUFACTURER : string                        := "";
     PRODUCT      : string                        := "";
-    SERIAL       : string                        := ""
+    SERIAL       : string                        := "";
+    CONFIG_DESC  : BYTE_ARRAY := (
+      -- Configuration descriptor
+      X"09",        -- bLength = 9
+      X"02",        -- bDescriptionType = Configuration Descriptor
+      X"12", X"00", -- wTotalLength = 18
+      X"01",        -- bNumInterfaces = 1
+      X"01",        -- bConfigurationValue
+      X"00",        -- iConfiguration
+      X"C0",        -- bmAttributes = Self-powered
+      X"32",        -- bMaxPower = 100 mA
+      -- Interface descriptor
+      X"09",        -- bLength = 9
+      X"04",        -- bDescriptorType = Interface Descriptor
+      X"00",        -- bInterfaceNumber = 0
+      X"00",        -- bAlternateSetting
+      X"00",        -- bNumEndpoints = 0
+      X"00",        -- bInterfaceClass
+      X"00",        -- bInterfaceSubClass
+      X"00",        -- bInterfaceProtocol
+      X"00"         -- iInterface
+      )
     );
   port (
     ulpi_data_in            : in  std_logic_vector(7 downto 0);
@@ -317,7 +338,8 @@ begin
       PRODUCT_ID   => PRODUCT_ID,
       MANUFACTURER => MANUFACTURER,
       PRODUCT      => PRODUCT,
-      SERIAL       => SERIAL
+      SERIAL       => SERIAL,
+      CONFIG_DESC  => CONFIG_DESC
       )
     port map (
       rst                     => usb_reset_int,

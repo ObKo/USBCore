@@ -36,7 +36,8 @@ package usbcore is
       PRODUCT_ID   : std_logic_vector(15 downto 0);
       MANUFACTURER : string;
       PRODUCT      : string;
-      SERIAL       : string
+      SERIAL       : string;
+      CONFIG_DESC  : BYTE_ARRAY
     );
     port (
       rst                     : in  std_logic;
@@ -228,12 +229,13 @@ package usbcore is
   end component;
   
   component usb_tlp is
-    generic (
+  generic (
     VENDOR_ID               : std_logic_vector(15 downto 0);
     PRODUCT_ID              : std_logic_vector(15 downto 0);
     MANUFACTURER            : string;
     PRODUCT                 : string;
-    SERIAL                  : string
+    SERIAL                  : string;
+    CONFIG_DESC             : BYTE_ARRAY
   );
   port (
     ulpi_data_in            : in  std_logic_vector(7 downto 0);

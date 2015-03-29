@@ -53,7 +53,48 @@ entity ep1_loopback is
   );
 end ep1_loopback;
 
-architecture ep1_loopback of ep1_loopback is  
+architecture ep1_loopback of ep1_loopback is
+  constant CONFIG_DESC : BYTE_ARRAY(0 to 8) := (
+    X"09",                              -- bLength = 9
+    X"02",                              -- bDescriptionType = Configuration Descriptor
+    X"20", X"00",                       -- wTotalLength = 32
+    X"01",                              -- bNumInterfaces = 1
+    X"01",                              -- bConfigurationValue
+    X"00",                              -- iConfiguration
+    X"C0",                              -- bmAttributes = Self-powered
+    X"32"                               -- bMaxPower = 100 mA
+    );
+
+  constant INTERFACE_DESC : BYTE_ARRAY(0 to 8) := (
+    X"09",                              -- bLength = 9
+    X"04",                              -- bDescriptorType = Interface Descriptor
+    X"00",                              -- bInterfaceNumber = 0
+    X"00",                              -- bAlternateSetting
+    X"02",                              -- bNumEndpoints = 2
+    X"00",                              -- bInterfaceClass
+    X"00",                              -- bInterfaceSubClass
+    X"00",                              -- bInterfaceProtocol
+    X"00"                               -- iInterface
+    );
+
+  constant EP1_IN_DESC : BYTE_ARRAY(0 to 6) := (
+    X"07",                              -- bLength = 7
+    X"05",                              -- bDescriptorType = Endpoint Descriptor
+    X"81",                              -- bEndpointAddress = IN1
+    B"00_00_00_10",                     -- bmAttributes = Bulk
+    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
+    X"00"                               -- bInterval
+    );
+
+  constant EP1_OUT_DESC : BYTE_ARRAY(0 to 6) := (
+    X"07",                              -- bLength = 7
+    X"05",                              -- bDescriptorType = Endpoint Descriptor
+    X"01",                              -- bEndpointAddress = OUT1
+    B"00_00_00_10",                     -- bmAttributes = Bulk
+    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
+    X"00"                               -- bInterval
+    );
+
   signal ulpi_data_in           : std_logic_vector(7 downto 0);
   signal ulpi_data_out          : std_logic_vector(7 downto 0);
     
@@ -127,7 +168,9 @@ begin
     PRODUCT_ID => X"BEEF",
     MANUFACTURER => "USBCore",
     PRODUCT => "Endpoint 1 Loopback Device",
-    SERIAL => ""
+    SERIAL => "",
+    CONFIG_DESC => CONFIG_DESC & INTERFACE_DESC &
+                   EP1_IN_DESC & EP1_OUT_DESC
   )
   port map (    
 	ulpi_data_in => ulpi_data_in,

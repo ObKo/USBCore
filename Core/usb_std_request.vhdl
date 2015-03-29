@@ -36,7 +36,28 @@ entity usb_std_request is
     PRODUCT_ID   : std_logic_vector(15 downto 0) := X"BEEF";
     MANUFACTURER : string                        := "";
     PRODUCT      : string                        := "";
-    SERIAL       : string                        := ""
+    SERIAL       : string                        := "";
+    CONFIG_DESC  : BYTE_ARRAY                    := (
+      -- Configuration descriptor
+      X"09",        -- bLength = 9
+      X"02",        -- bDescriptionType = Configuration Descriptor
+      X"12", X"00", -- wTotalLength = 18
+      X"01",        -- bNumInterfaces = 1
+      X"01",        -- bConfigurationValue
+      X"00",        -- iConfiguration
+      X"C0",        -- bmAttributes = Self-powered
+      X"32",        -- bMaxPower = 100 mA
+      -- Interface descriptor
+      X"09",        -- bLength = 9
+      X"04",        -- bDescriptorType = Interface Descriptor
+      X"00",        -- bInterfaceNumber = 0
+      X"00",        -- bAlternateSetting
+      X"00",        -- bNumEndpoints = 0
+      X"00",        -- bInterfaceClass
+      X"00",        -- bInterfaceSubClass
+      X"00",        -- bInterfaceProtocol
+      X"00"         -- iInterface
+      )
     );
   port (
     rst                     : in  std_logic;
@@ -118,7 +139,7 @@ architecture usb_std_request of usb_std_request is
   constant DEVICE_DESC : BYTE_ARRAY(0 to 17) := (
     X"12",                              -- bLength = 18
     X"01",                              -- bDescriptionType = Device Descriptor
-    X"01", X"10",                       -- bcdUSB = USB 2.0
+    X"01", X"10",                       -- bcdUSB = USB 1.1
     X"FF",                              -- bDeviceClass = None
     X"00",                              -- bDeviceSubClass
     X"00",                              -- bDeviceProtocol
@@ -132,47 +153,6 @@ architecture usb_std_request of usb_std_request is
     X"01"                               -- bNumConfigurations = 1
     );
 
-  constant CONFIG_DESC : BYTE_ARRAY(0 to 8) := (
-    X"09",                              -- bLength = 9
-    X"02",                              -- bDescriptionType = Configuration Descriptor
-    X"20", X"00",                       -- wTotalLength = 32
-    X"01",                              -- bNumInterfaces = 1
-    X"01",                              -- bConfigurationValue
-    X"00",                              -- iConfiguration
-    X"C0",                              -- bmAttributes = Self-powered
-    X"32"                               -- bMaxPower = 100 mA
-    );
-
-  constant INTERFACE_DESC : BYTE_ARRAY(0 to 8) := (
-    X"09",                              -- bLength = 9
-    X"04",                              -- bDescriptorType = Interface Descriptor
-    X"00",                              -- bInterfaceNumber = 0
-    X"00",                              -- bAlternateSetting
-    X"02",                              -- bNumEndpoints = 2
-    X"00",                              -- bInterfaceClass
-    X"00",                              -- bInterfaceSubClass
-    X"00",                              -- bInterfaceProtocol
-    X"00"                               -- iInterface
-    );
-
-  constant EP1_IN_DESC : BYTE_ARRAY(0 to 6) := (
-    X"07",                              -- bLength = 7
-    X"05",                              -- bDescriptorType = Endpoint Descriptor
-    X"81",                              -- bEndpointAddress = IN1
-    B"00_00_00_10",                     -- bmAttributes = Bulk
-    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
-    X"00"                               -- bInterval
-    );
-
-  constant EP1_OUT_DESC : BYTE_ARRAY(0 to 6) := (
-    X"07",                              -- bLength = 7
-    X"05",                              -- bDescriptorType = Endpoint Descriptor
-    X"01",                              -- bEndpointAddress = OUT1
-    B"00_00_00_10",                     -- bmAttributes = Bulk
-    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
-    X"00"                               -- bInterval
-    );
-
   constant STR_DESC : BYTE_ARRAY(0 to 3) := (
     X"04",                              -- bLength = 4
     X"03",                              -- bDescriptorType = String Descriptor
@@ -182,26 +162,21 @@ architecture usb_std_request of usb_std_request is
   constant PRODUCT_STR_DESC      : BYTE_ARRAY(0 to 2 + 2 * PRODUCT'length - 1)      := string2descriptor(PRODUCT);
   constant SERIAL_STR_DESC       : BYTE_ARRAY(0 to 2 + 2 * SERIAL'length - 1)       := string2descriptor(SERIAL);
 
-  constant DESC_SIZE_STR         : integer := DEVICE_DESC'length + CONFIG_DESC'length + INTERFACE_DESC'length +
-                                      EP1_IN_DESC'length + EP1_OUT_DESC'length + STR_DESC'length +
+  constant DESC_SIZE_STR         : integer := DEVICE_DESC'length + CONFIG_DESC'length + STR_DESC'length +
                                       MANUFACTURER_STR_DESC'length + PRODUCT_STR_DESC'length + SERIAL_STR_DESC'length;
-  constant DESC_SIZE_NOSTR       : integer := DEVICE_DESC'length + CONFIG_DESC'length + INTERFACE_DESC'length +
-                                        EP1_IN_DESC'length + EP1_OUT_DESC'length;
+  constant DESC_SIZE_NOSTR       : integer := DEVICE_DESC'length + CONFIG_DESC'length;
 
   constant DESC_HAS_STRINGS      : boolean := (MANUFACTURER'length > 0) or (PRODUCT'length > 0) or (SERIAL'length > 0);
 
   constant DESC_SIZE             : integer := selectInt(DESC_HAS_STRINGS, DESC_SIZE_STR, DESC_SIZE_NOSTR);
 
   constant USB_DESC              : BYTE_ARRAY(0 to DESC_SIZE - 1) := selectArray(DESC_HAS_STRINGS,
-                                                                    DEVICE_DESC & CONFIG_DESC & INTERFACE_DESC
-                                                                    & EP1_IN_DESC & EP1_OUT_DESC
-                                                                    & STR_DESC & MANUFACTURER_STR_DESC & PRODUCT_STR_DESC & SERIAL_STR_DESC,
-                                                                    DEVICE_DESC & CONFIG_DESC & INTERFACE_DESC
-                                                                    & EP1_IN_DESC & EP1_OUT_DESC);
+                                                                       DEVICE_DESC & CONFIG_DESC & STR_DESC 
+                                                                         & MANUFACTURER_STR_DESC & PRODUCT_STR_DESC & SERIAL_STR_DESC,
+                                                                       DEVICE_DESC & CONFIG_DESC);
 
   constant DESC_CONFIG_START     : integer := DEVICE_DESC'length;
-  constant DESC_STRING_START     : integer := DEVICE_DESC'length + CONFIG_DESC'length + INTERFACE_DESC'length +
-                                              EP1_IN_DESC'length + EP1_OUT_DESC'length;
+  constant DESC_STRING_START     : integer := DEVICE_DESC'length + CONFIG_DESC'length;
 
   type MACHINE is (S_Idle, S_GetDescriptor, S_SetConfiguration, S_SetAddress);
 
