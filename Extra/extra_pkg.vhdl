@@ -32,6 +32,9 @@ use work.USBCore.all;
 
 package USBExtra is
   component blk_ep_out_ctl is
+  generic (
+    USE_ASYNC_FIFO          : boolean := false
+  );
   port (
     rst                     : in  std_logic;
     usb_clk                 : in  std_logic;
@@ -51,6 +54,9 @@ package USBExtra is
   end component;
   
   component blk_ep_in_ctl is
+  generic (
+    USE_ASYNC_FIFO          : boolean := false
+  );
   port (
     rst                     : in  std_logic;
     usb_clk                 : in  std_logic;

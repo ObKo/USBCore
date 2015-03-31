@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.7
-# Date: Sat Mar 28 12:37:20 2015
+# Date: Sun Mar 29 12:56:38 2015
 #
 ##############################################################
 #
@@ -58,7 +58,7 @@ CSET disable_timing_violations=false
 CSET disable_timing_violations_axi=false
 CSET dout_reset_value=0
 CSET empty_threshold_assert_value=2
-CSET empty_threshold_assert_value_axis=2045
+CSET empty_threshold_assert_value_axis=1021
 CSET empty_threshold_assert_value_rach=13
 CSET empty_threshold_assert_value_rdch=1021
 CSET empty_threshold_assert_value_wach=13
@@ -112,7 +112,7 @@ CSET fifo_implementation_wdch=Independent_Clocks_Block_RAM
 CSET fifo_implementation_wrch=Independent_Clocks_Distributed_RAM
 CSET full_flags_reset_value=1
 CSET full_threshold_assert_value=1022
-CSET full_threshold_assert_value_axis=1984
+CSET full_threshold_assert_value_axis=960
 CSET full_threshold_assert_value_rach=15
 CSET full_threshold_assert_value_rdch=1023
 CSET full_threshold_assert_value_wach=15
@@ -136,7 +136,7 @@ CSET inject_sbit_error_wdch=false
 CSET inject_sbit_error_wrch=false
 CSET input_data_width=18
 CSET input_depth=1024
-CSET input_depth_axis=2048
+CSET input_depth_axis=1024
 CSET input_depth_rach=16
 CSET input_depth_rdch=1024
 CSET input_depth_wach=16
@@ -210,4 +210,4 @@ CSET wuser_width=1
 MISC pkg_timestamp=2012-11-19T12:39:56Z
 # END Extra information
 GENERATE
-# CRC: 4ac84b19
+# CRC: d96ea664

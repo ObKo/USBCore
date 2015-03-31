@@ -27,7 +27,14 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
+library work;
+use work.USBCore.all;
+use work.USBExtra.all;
+
 entity blk_ep_in_ctl is
+  generic (
+    USE_ASYNC_FIFO          : boolean := false
+  );
   port (
     rst                     : in  std_logic;
     usb_clk                 : in  std_logic;
@@ -69,6 +76,26 @@ architecture blk_ep_in_ctl of blk_ep_in_ctl is
     axis_prog_full  : out std_logic
   );
   end component;
+
+  component blk_in_fifo_sync
+  port (
+    s_aclk          : in  std_logic;
+    
+    s_aresetn       : in  std_logic;
+    
+    s_axis_tvalid   : in  std_logic;
+    s_axis_tready   : out std_logic;
+    s_axis_tdata    : in  std_logic_vector(7 downto 0);
+    s_axis_tlast    : in  std_logic;
+    
+    m_axis_tvalid   : out std_logic;
+    m_axis_tready   : in  std_logic;
+    m_axis_tdata    : out std_logic_vector(7 downto 0);
+    m_axis_tlast    : in std_logic;
+    
+    axis_prog_full  : out std_logic
+  );
+  end component;    
   
   type MACHINE is (S_Idle, S_Xfer);
   signal state          : MACHINE := S_Idle;
@@ -114,8 +141,53 @@ begin
     end if;
   end process;
    
-  -- 3 of data clk => axis_clk < 180 MHz if usb_clk = 60 MHz
-  was_last_usb <= was_last OR was_last_d OR was_last_dd;
+  ASYNC: if USE_ASYNC_FIFO generate
+    -- 3 of data clk => axis_clk < 180 MHz if usb_clk = 60 MHz
+    was_last_usb <= was_last OR was_last_d OR was_last_dd;
+    
+    FIFO: blk_in_fifo
+    port map (
+      m_aclk => usb_clk,
+      s_aclk => axis_clk,
+    
+      s_aresetn => NOT rst,
+    
+      s_axis_tvalid => s_axis_tvalid,
+      s_axis_tready => s_axis_tready,
+      s_axis_tdata => s_axis_tdata,
+      s_axis_tlast => s_axis_tlast,
+    
+      m_axis_tvalid => m_axis_tvalid,
+      m_axis_tready => m_axis_tready,
+      m_axis_tdata => m_axis_tdata,
+      m_axis_tlast => m_axis_tlast,
+    
+      axis_prog_full => axis_prog_full
+    );
+  end generate;
+  
+  SYNC: if not USE_ASYNC_FIFO generate
+    was_last_usb <= was_last;
+    
+    FIFO: blk_in_fifo_sync
+    port map (
+      s_aclk => usb_clk,
+    
+      s_aresetn => NOT rst,
+    
+      s_axis_tvalid => s_axis_tvalid,
+      s_axis_tready => s_axis_tready,
+      s_axis_tdata => s_axis_tdata,
+      s_axis_tlast => s_axis_tlast,
+    
+      m_axis_tvalid => m_axis_tvalid,
+      m_axis_tready => m_axis_tready,
+      m_axis_tdata => m_axis_tdata,
+      m_axis_tlast => m_axis_tlast,
+    
+      axis_prog_full => axis_prog_full
+    );
+  end generate;
   
   WAS_LAST_LATCHER: process(axis_clk) is
   begin
@@ -133,26 +205,6 @@ begin
       was_last_dd <= was_last_d;
     end if;
   end process;
-  
-  FIFO: blk_in_fifo
-  port map (
-    m_aclk => usb_clk,
-    s_aclk => axis_clk,
-    
-    s_aresetn => NOT rst,
-    
-    s_axis_tvalid => s_axis_tvalid,
-    s_axis_tready => s_axis_tready,
-    s_axis_tdata => s_axis_tdata,
-    s_axis_tlast => s_axis_tlast,
-    
-    m_axis_tvalid => m_axis_tvalid,
-    m_axis_tready => m_axis_tready,
-    m_axis_tdata => m_axis_tdata,
-    m_axis_tlast => m_axis_tlast,
-    
-    axis_prog_full => axis_prog_full
-  );
   
   s_axis_tdata <= axis_tdata;
   s_axis_tvalid <= axis_tvalid;

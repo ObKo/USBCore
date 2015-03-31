@@ -27,7 +27,14 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
+library work;
+use work.USBCore.all;
+use work.USBExtra.all;
+
 entity blk_ep_out_ctl is
+  generic (
+    USE_ASYNC_FIFO          : boolean := false
+  );
   port (
     rst                     : in  std_logic;
     usb_clk                 : in  std_logic;
@@ -66,6 +73,26 @@ architecture blk_ep_out_ctl of blk_ep_out_ctl is
   );
   end component;
   
+  component blk_out_fifo_sync
+  port (
+    s_aclk          : in  std_logic;
+    
+    s_aresetn       : in  std_logic;
+    
+    s_axis_tvalid   : in  std_logic;
+    s_axis_tready   : out std_logic;
+    s_axis_tdata    : in  std_logic_vector(7 downto 0);
+    s_axis_tlast    : in  std_logic;
+    
+    m_axis_tvalid   : out std_logic;
+    m_axis_tready   : in  std_logic;
+    m_axis_tdata    : out std_logic_vector(7 downto 0);
+    m_axis_tlast    : out std_logic;
+    
+    axis_prog_full  : out std_logic
+  );
+  end component;
+  
   signal s_axis_tvalid  : std_logic;
   signal s_axis_tready  : std_logic;
   signal s_axis_tdata   : std_logic_vector(7 downto 0);
@@ -79,23 +106,46 @@ begin
     end if;
   end process;
   
-  FIFO: blk_out_fifo
-  port map (
-    m_aclk => axis_clk,
-    s_aclk => usb_clk,
+  ASYNC: if USE_ASYNC_FIFO generate
+    FIFO: blk_out_fifo
+    port map (
+      m_aclk => axis_clk,
+      s_aclk => usb_clk,
     
-    s_aresetn => NOT rst,
+      s_aresetn => NOT rst,
     
-    s_axis_tvalid => blk_xfer_out_data_valid,
-    s_axis_tready => open,
-    s_axis_tdata => blk_xfer_out_data,
+      s_axis_tvalid => blk_xfer_out_data_valid,
+      s_axis_tready => open,
+      s_axis_tdata => blk_xfer_out_data,
     
-    m_axis_tvalid => axis_tvalid,
-    m_axis_tready => axis_tready,
-    m_axis_tdata => axis_tdata,
+      m_axis_tvalid => axis_tvalid,
+      m_axis_tready => axis_tready,
+      m_axis_tdata => axis_tdata,
+      
+      axis_prog_full => axis_prog_full
+    );
+  end generate;
+  
+  SYNC: if not USE_ASYNC_FIFO generate
+    FIFO: blk_out_fifo_sync
+    port map (
+      s_aclk => usb_clk,
     
-    axis_prog_full => axis_prog_full
-  );
+      s_aresetn => NOT rst,
+    
+      s_axis_tvalid => blk_xfer_out_data_valid,
+      s_axis_tready => open,
+      s_axis_tdata => blk_xfer_out_data,
+      s_axis_tlast => '0',
+    
+      m_axis_tvalid => axis_tvalid,
+      m_axis_tready => axis_tready,
+      m_axis_tdata => axis_tdata,
+      m_axis_tlast => open,
+      
+      axis_prog_full => axis_prog_full
+    );
+  end generate;
   
   axis_tlast <= '0';
  

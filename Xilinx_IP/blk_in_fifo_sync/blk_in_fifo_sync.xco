@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.7
-# Date: Sun Mar 29 12:59:19 2015
+# Date: Tue Mar 31 10:17:14 2015
 #
 ##############################################################
 #
@@ -50,20 +50,20 @@ CSET axi_type=AXI4_Stream
 CSET axis_type=FIFO
 CSET buser_width=1
 CSET clock_enable_type=Slave_Interface_Clock_Enable
-CSET clock_type_axi=Independent_Clock
-CSET component_name=blk_in_fifo
+CSET clock_type_axi=Common_Clock
+CSET component_name=blk_in_fifo_sync
 CSET data_count=false
 CSET data_count_width=10
 CSET disable_timing_violations=false
 CSET disable_timing_violations_axi=false
 CSET dout_reset_value=0
 CSET empty_threshold_assert_value=2
-CSET empty_threshold_assert_value_axis=1021
-CSET empty_threshold_assert_value_rach=13
-CSET empty_threshold_assert_value_rdch=1021
-CSET empty_threshold_assert_value_wach=13
-CSET empty_threshold_assert_value_wdch=1021
-CSET empty_threshold_assert_value_wrch=13
+CSET empty_threshold_assert_value_axis=1022
+CSET empty_threshold_assert_value_rach=14
+CSET empty_threshold_assert_value_rdch=1022
+CSET empty_threshold_assert_value_wach=14
+CSET empty_threshold_assert_value_wdch=1022
+CSET empty_threshold_assert_value_wrch=14
 CSET empty_threshold_negate_value=3
 CSET enable_aruser=false
 CSET enable_awuser=false
@@ -104,12 +104,12 @@ CSET fifo_application_type_wach=Data_FIFO
 CSET fifo_application_type_wdch=Data_FIFO
 CSET fifo_application_type_wrch=Data_FIFO
 CSET fifo_implementation=Common_Clock_Block_RAM
-CSET fifo_implementation_axis=Independent_Clocks_Block_RAM
-CSET fifo_implementation_rach=Independent_Clocks_Distributed_RAM
-CSET fifo_implementation_rdch=Independent_Clocks_Block_RAM
-CSET fifo_implementation_wach=Independent_Clocks_Distributed_RAM
-CSET fifo_implementation_wdch=Independent_Clocks_Block_RAM
-CSET fifo_implementation_wrch=Independent_Clocks_Distributed_RAM
+CSET fifo_implementation_axis=Common_Clock_Block_RAM
+CSET fifo_implementation_rach=Common_Clock_Distributed_RAM
+CSET fifo_implementation_rdch=Common_Clock_Block_RAM
+CSET fifo_implementation_wach=Common_Clock_Distributed_RAM
+CSET fifo_implementation_wdch=Common_Clock_Block_RAM
+CSET fifo_implementation_wrch=Common_Clock_Distributed_RAM
 CSET full_flags_reset_value=1
 CSET full_threshold_assert_value=1022
 CSET full_threshold_assert_value_axis=64
@@ -210,4 +210,4 @@ CSET wuser_width=1
 MISC pkg_timestamp=2012-11-19T12:39:56Z
 # END Extra information
 GENERATE
-# CRC: d3658584
+# CRC: a5528c41
