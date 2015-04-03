@@ -106,7 +106,8 @@ end usb_xfer;
 
 architecture usb_xfer of usb_xfer is
   type MACHINE is (S_Idle, S_ControlSetup, S_ControlSetupACK, S_ControlWaitDataIN,
-                   S_ControlDataIN, S_ControlDataIN_Z, S_ControlDataIN_ACK, S_ControlStatusOUT, S_ControlStatusOUT_D,
+                   S_ControlDataIN, S_ControlDataIN_Z, S_ControlDataIN_ACK, S_ControlWaitDataOUT,
+                   S_ControlDataOUT, S_ControlDataOUT_MyACK, S_ControlStatusOUT, S_ControlStatusOUT_D,
                    S_ControlStatusOUT_ACK, S_ControlStatusIN, S_ControlStatusIN_MyACK, S_ControlStatusIN_D,
                    S_ControlStatusIN_ACK, S_BulkIN, S_BulkIN_MyACK, S_BulkIN_ACK, S_BulkOUT,
                    S_BulkOUT_ACK);
@@ -129,7 +130,7 @@ begin
   RX_DATA_COUNT : process(clk) is
   begin
     if rising_edge(clk) then
-      if state = S_Idle then
+      if state = S_Idle or state = S_ControlSetupACK then
         rx_counter <= (others => '0');
       elsif rx_trn_valid = '1' then
         rx_counter <= rx_counter + 1;
@@ -244,6 +245,8 @@ begin
               elsif ctl_xfer_type_int(7) = '1' then
                 state      <= S_ControlWaitDataIN;
                 tx_counter <= (others => '0');
+              elsif ctl_xfer_type_int(7) = '0' then
+                state      <= S_ControlWaitDataOUT;
               end if;
             end if;
 
@@ -256,6 +259,33 @@ begin
                 state <= S_ControlDataIN_Z;
               end if;
               tx_trn_data_start <= '1';
+            end if;
+            
+          when S_ControlWaitDataOUT =>
+            -- OUT Token
+            if trn_start = '1' and trn_type = "00" then
+              if ctl_xfer_accept = '1' then
+                ctl_status <= "00";
+              else
+                ctl_status <= "10";
+              end if;
+              state <= S_ControlDataOUT;
+            end if;
+            
+          when S_ControlDataOUT =>
+            if rx_trn_valid = '1' or rx_trn_end = '1' then
+              if rx_counter(5 downto 0) = 63 or rx_counter = ctl_xfer_length_int - 1 or rx_trn_end = '1' then
+                state <= S_ControlDataOUT_MyACK;
+              end if;
+            end if;
+            
+          when S_ControlDataOUT_MyACK =>
+            if tx_trn_hsk_sended = '1' then
+              if rx_counter = ctl_xfer_length_int then
+                state <= S_ControlStatusIN;
+              else
+                state <= S_ControlWaitDataOUT;
+              end if;
             end if;
 
           when S_ControlDataIN =>
@@ -322,14 +352,14 @@ begin
                 tx_trn_data_start <= '1';
                 state             <= S_ControlStatusIN_D;
               else
-                ctl_status <= "11";
+                ctl_status <= "10";
                 state      <= S_ControlStatusIN_MyACK;
               end if;
             end if;
 
           when S_ControlStatusIN_MyACK =>
             if tx_trn_hsk_sended = '1' then
-              state <= S_Idle;
+              state <= S_ControlStatusIN;
             end if;
 
           when S_ControlStatusIN_D =>
@@ -386,6 +416,7 @@ begin
                      '1' when state = S_ControlStatusIN_MyACK else
                      '1' when state = S_BulkIN_MyACK else
                      '1' when state = S_BulkOUT_ACK else
+                     '1' when state = S_ControlDataOUT_MyACK else
                      '0';
 
   ctl_xfer_length        <= ctl_xfer_length_int;
@@ -415,5 +446,8 @@ begin
   blk_xfer_out_data       <= rx_trn_data;
   blk_xfer_out_data_valid <= rx_trn_valid when state = S_BulkOUT else
                              '0';
+                             
+  ctl_xfer_data_out <= rx_trn_data;
+  ctl_xfer_data_out_valid <= rx_trn_valid;
 
 end usb_xfer;

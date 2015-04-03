@@ -288,7 +288,11 @@ begin
             if tx_trn_send_hsk = '1' then
               tx_state <= S_HSK;
             elsif tx_trn_data_start = '1' then
-              tx_zero_packet <= tx_trn_data_last;
+              if tx_trn_data_last = '1' and tx_trn_data_valid = '0' then
+                tx_zero_packet <= '1';
+              else
+                tx_zero_packet <= '0';
+              end if;
               tx_state       <= S_DataPID;
             end if;
 

@@ -225,12 +225,12 @@ begin
   
   EP1_IN_CTL: blk_ep_in_ctl 
   generic map (
-    USE_ASYNC_FIFO => false
+    USE_ASYNC_FIFO => true
   )
   port map (
     rst => usb_reset,
     usb_clk => usb_clk,
-    axis_clk => usb_clk,
+    axis_clk => main_clk,
 
     blk_in_xfer => blk_in_xfer,
     
@@ -248,12 +248,12 @@ begin
   
   EP1_OUT_CTL: blk_ep_out_ctl 
   generic map (
-    USE_ASYNC_FIFO => false
+    USE_ASYNC_FIFO => true
   )
   port map (
     rst => usb_reset,
     usb_clk => usb_clk,
-    axis_clk => usb_clk,
+    axis_clk => main_clk,
 
     blk_out_xfer => blk_out_xfer,
     
