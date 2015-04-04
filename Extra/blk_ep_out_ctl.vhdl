@@ -73,36 +73,16 @@ architecture blk_ep_out_ctl of blk_ep_out_ctl is
   );
   end component;
   
-  component blk_out_fifo_sync
-  port (
-    s_aclk          : in  std_logic;
-    
-    s_aresetn       : in  std_logic;
-    
-    s_axis_tvalid   : in  std_logic;
-    s_axis_tready   : out std_logic;
-    s_axis_tdata    : in  std_logic_vector(7 downto 0);
-    s_axis_tlast    : in  std_logic;
-    
-    m_axis_tvalid   : out std_logic;
-    m_axis_tready   : in  std_logic;
-    m_axis_tdata    : out std_logic_vector(7 downto 0);
-    m_axis_tlast    : out std_logic;
-    
-    axis_prog_full  : out std_logic
-  );
-  end component;
-  
   signal s_axis_tvalid  : std_logic;
   signal s_axis_tready  : std_logic;
   signal s_axis_tdata   : std_logic_vector(7 downto 0);
       
-  signal axis_prog_full : std_logic;
+  signal prog_full      : std_logic;
 begin
   FULL_LATCH: process(usb_clk) is
   begin
     if rising_edge(usb_clk) then
-      blk_xfer_out_ready_read <= NOT axis_prog_full;
+      blk_xfer_out_ready_read <= NOT prog_full;
     end if;
   end process;
   
@@ -122,16 +102,20 @@ begin
       m_axis_tready => axis_tready,
       m_axis_tdata => axis_tdata,
       
-      axis_prog_full => axis_prog_full
+      axis_prog_full => prog_full
     );
   end generate;
   
   SYNC: if not USE_ASYNC_FIFO generate
-    FIFO: blk_out_fifo_sync
+    FIFO: sync_fifo
+    generic map (
+      FIFO_WIDTH => 8,
+      FIFO_DEPTH => 1024,
+      PROG_FULL_VALUE => 960
+    )
     port map (
-      s_aclk => usb_clk,
-    
-      s_aresetn => NOT rst,
+      clk => usb_clk,
+      rst => rst,
     
       s_axis_tvalid => blk_xfer_out_data_valid,
       s_axis_tready => open,
@@ -143,7 +127,7 @@ begin
       m_axis_tdata => axis_tdata,
       m_axis_tlast => open,
       
-      axis_prog_full => axis_prog_full
+      prog_full => prog_full
     );
   end generate;
   

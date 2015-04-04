@@ -76,26 +76,6 @@ architecture blk_ep_in_ctl of blk_ep_in_ctl is
     axis_prog_full  : out std_logic
   );
   end component;
-
-  component blk_in_fifo_sync
-  port (
-    s_aclk          : in  std_logic;
-    
-    s_aresetn       : in  std_logic;
-    
-    s_axis_tvalid   : in  std_logic;
-    s_axis_tready   : out std_logic;
-    s_axis_tdata    : in  std_logic_vector(7 downto 0);
-    s_axis_tlast    : in  std_logic;
-    
-    m_axis_tvalid   : out std_logic;
-    m_axis_tready   : in  std_logic;
-    m_axis_tdata    : out std_logic_vector(7 downto 0);
-    m_axis_tlast    : in std_logic;
-    
-    axis_prog_full  : out std_logic
-  );
-  end component;    
   
   type MACHINE is (S_Idle, S_Xfer);
   signal state          : MACHINE := S_Idle;
@@ -110,7 +90,7 @@ architecture blk_ep_in_ctl of blk_ep_in_ctl is
   signal m_axis_tdata   : std_logic_vector(7 downto 0);
   signal m_axis_tlast   : std_logic;
   
-  signal axis_prog_full : std_logic;
+  signal prog_full      : std_logic;
   
   signal was_last_usb   : std_logic;
   signal was_last       : std_logic;
@@ -125,7 +105,7 @@ begin
     elsif rising_edge(usb_clk) then
       case state is
         when S_Idle =>
-          if was_last_usb = '1' OR axis_prog_full = '1' then
+          if was_last_usb = '1' OR prog_full = '1' then
             blk_xfer_in_has_data <= '1';
           end if;
           if blk_in_xfer = '1' then
@@ -162,18 +142,22 @@ begin
       m_axis_tdata => m_axis_tdata,
       m_axis_tlast => m_axis_tlast,
     
-      axis_prog_full => axis_prog_full
+      axis_prog_full => prog_full
     );
   end generate;
   
   SYNC: if not USE_ASYNC_FIFO generate
     was_last_usb <= was_last;
     
-    FIFO: blk_in_fifo_sync
+    FIFO: sync_fifo
+    generic map (
+      FIFO_WIDTH => 8,
+      FIFO_DEPTH => 1024,
+      PROG_FULL_VALUE => 64
+    )
     port map (
-      s_aclk => usb_clk,
-    
-      s_aresetn => NOT rst,
+      clk => usb_clk,
+      rst => rst,
     
       s_axis_tvalid => s_axis_tvalid,
       s_axis_tready => s_axis_tready,
@@ -185,7 +169,7 @@ begin
       m_axis_tdata => m_axis_tdata,
       m_axis_tlast => m_axis_tlast,
     
-      axis_prog_full => axis_prog_full
+      prog_full => prog_full
     );
   end generate;
   

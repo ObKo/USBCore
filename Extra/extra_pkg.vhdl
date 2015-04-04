@@ -76,4 +76,28 @@ package USBExtra is
     axis_tlast              : in  std_logic
   );
   end component;
+  
+  component sync_fifo
+  generic (
+    constant FIFO_WIDTH     : positive;
+    constant FIFO_DEPTH     : positive;
+    constant PROG_FULL_VALUE: positive
+  );
+  port (
+    clk             : in  std_logic;
+    rst             : in  std_logic;
+    
+    s_axis_tvalid   : in  std_logic;
+    s_axis_tready   : out std_logic;
+    s_axis_tdata    : in  std_logic_vector(7 downto 0);
+    s_axis_tlast    : in  std_logic;
+    
+    m_axis_tvalid   : out std_logic;
+    m_axis_tready   : in  std_logic;
+    m_axis_tdata    : out std_logic_vector(7 downto 0);
+    m_axis_tlast    : out std_logic;
+    
+    prog_full       : out std_logic
+  );
+  end component;
 end USBExtra;
