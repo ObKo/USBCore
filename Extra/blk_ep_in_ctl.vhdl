@@ -192,7 +192,7 @@ begin
   
   s_axis_tdata <= axis_tdata;
   s_axis_tvalid <= axis_tvalid;
-  axis_tready <= s_axis_tvalid;
+  axis_tready <= s_axis_tready;
   s_axis_tlast <= axis_tlast;
   
   blk_xfer_in_data <= m_axis_tdata;

@@ -77,7 +77,8 @@ end usb_flasher;
 
 architecture usb_flasher of usb_flasher is
   type FLASH_MACHINE is (S_Idle, S_WriteCommand, S_ReadResponse, S_CtlResponse, S_CtlStartReceive,
-                         S_CtlReceive, S_WriteData, S_Wait, S_ReadResponseLast);
+                         S_CtlReceive, S_WriteData, S_Wait, S_ReadResponseLast, S_PageProg, 
+                         S_PageRead, S_PageReadLast);
   type SPI_MACHINE is (S_Idle, S_Xfer);
 
   signal spi_state            : SPI_MACHINE;
@@ -112,12 +113,68 @@ architecture usb_flasher of usb_flasher is
   signal flash_xfer_max_count : std_logic_vector(7 downto 0);
 
   signal data_dir             : std_logic;
+  signal page_prog            : std_logic;
+  signal page_read            : std_logic;
 
   signal ctl_wr_addr          : std_logic_vector(1 downto 0);
   signal ctl_rd_addr          : std_logic_vector(1 downto 0);
   signal ctl_buf              : BYTE_ARRAY(0 to 3);
+  
+  signal blk_out_tvalid       : std_logic;
+  signal blk_out_tready       : std_logic;
+  signal blk_out_tdata        : std_logic_vector(7 downto 0);
+  signal blk_out_tlast        : std_logic;
+  
+  signal blk_in_tvalid        : std_logic;
+  signal blk_in_tready        : std_logic;
+  signal blk_in_tdata         : std_logic_vector(7 downto 0);
+  signal blk_in_tlast         : std_logic;
 
 begin
+  OUT_ENDPOINT: blk_ep_out_ctl
+  generic map (
+    USE_ASYNC_FIFO => false
+  )
+  port map (
+    rst => rst,
+    usb_clk => clk,
+    axis_clk => clk,
+    
+    blk_out_xfer => blk_out_xfer,
+
+    blk_xfer_out_ready_read => blk_xfer_out_ready_read,
+    blk_xfer_out_data => blk_xfer_out_data,
+    blk_xfer_out_data_valid => blk_xfer_out_data_valid,
+    
+    axis_tdata => blk_out_tdata,
+    axis_tvalid => blk_out_tvalid,
+    axis_tready => blk_out_tready,
+    axis_tlast => blk_out_tlast
+  );
+  
+  IN_ENDPOINT: blk_ep_in_ctl
+  generic map (
+    USE_ASYNC_FIFO => false
+  )
+  port map (
+    rst => rst,
+    usb_clk => clk,
+    axis_clk => clk,
+
+    blk_in_xfer => blk_in_xfer,
+    
+    blk_xfer_in_has_data => blk_xfer_in_has_data,
+    blk_xfer_in_data => blk_xfer_in_data,
+    blk_xfer_in_data_valid => blk_xfer_in_data_valid,
+    blk_xfer_in_data_ready => blk_xfer_in_data_ready,
+    blk_xfer_in_data_last => blk_xfer_in_data_last,
+    
+    axis_tdata => blk_in_tdata,
+    axis_tvalid => blk_in_tvalid,
+    axis_tready => blk_in_tready,
+    axis_tlast => blk_in_tlast
+  );
+
   flash_clk180 <= not flash_clk;
 
   CLK_GEN : process(clk) is
@@ -253,7 +310,7 @@ begin
           when S_Idle =>
             if ctl_xfer = '1' then
               data_dir <= ctl_xfer_type(7);
-              if ctl_xfer_request = X"01" then
+              if ctl_xfer_request(7 downto 2) = "000001" then
                 flash_cmd       <= ctl_xfer_value(7 downto 0);
                 flash_resp_size <= ctl_xfer_length(2 downto 0);
 
@@ -261,6 +318,18 @@ begin
                   flash_state <= S_WriteCommand;
                 else
                   flash_state <= S_CtlStartReceive;
+                end if;
+                
+                if ctl_xfer_request(0) = '1' then
+                  page_prog <= '1';
+                else
+                  page_prog <= '0';
+                end if;
+                
+                if ctl_xfer_request(1) = '1' then
+                  page_read <= '1';
+                else
+                  page_read <= '0';
                 end if;
 
                 ctl_xfer_accept <= '1';
@@ -333,7 +402,16 @@ begin
           when S_WriteData =>
             if xfer_last = '1' then
               if flash_xfer_count = 0 then
-                flash_state <= S_Wait;
+                if page_prog = '0' and page_read = '0' then
+                  flash_state <= S_Wait;
+                elsif page_prog = '1' and blk_out_tvalid = '0' then
+                  flash_state <= S_Wait;
+                elsif page_prog = '1' then
+                  flash_state <= S_PageProg;
+                elsif page_read = '1' then
+                  flash_xfer_count <= (others => '1');
+                  flash_state <= S_PageRead;
+                end if;
               else
                 flash_xfer_count <= flash_xfer_count - 1;
               end if;
@@ -344,6 +422,27 @@ begin
             if ctl_xfer = '0' then
               flash_state <= S_Idle;
             end if;
+            
+          when S_PageProg =>
+            if xfer_last = '1' then
+              if blk_out_tvalid = '0' then
+                flash_state <= S_Wait;
+              end if;
+            end if;
+            
+          when S_PageRead =>
+            if xfer_last = '1' then
+              if flash_xfer_count = 0 then
+                flash_state <= S_PageReadLast;
+              else
+                flash_xfer_count <= flash_xfer_count - 1;
+              end if;
+            end if;
+            
+          when S_PageReadLast =>
+            if in_data_valid = '1' then
+              flash_state <= S_Wait;
+            end if;
 
         end case;
       end if;
@@ -353,12 +452,15 @@ begin
   flash_xfer_max_count <= "00000" & (flash_resp_size - 1);  --when flash_state = S_ReadResponseLast OR flash_state = S_WriteCommand
 
   out_data <= ctl_buf(to_integer(unsigned(ctl_rd_addr))) when flash_state = S_WriteData else
+              blk_out_tdata when flash_state = S_PageProg else
               flash_cmd;
 
-  xfer_valid <= '1' when flash_state = S_WriteCommand or flash_state = S_ReadResponse or flash_state = S_WriteData else
+  xfer_valid <= '1' when flash_state = S_WriteCommand or flash_state = S_ReadResponse or 
+                         flash_state = S_WriteData or flash_state = S_PageProg or
+                         flash_state = S_PageRead else
                 '0';
 
-  recieve_data <= '1' when flash_state = S_ReadResponse else
+  recieve_data <= '1' when flash_state = S_ReadResponse or flash_state = S_PageRead else
                   '0';
 
   xfer_last <= '1' when xfer_count = "111" and is_edge = '0' else
@@ -369,6 +471,15 @@ begin
                             '0';
   ctl_xfer_data_in_last <= '1' when flash_state = S_CtlResponse and flash_xfer_count = 0 else
                            '0';
+                           
+  blk_out_tready <= '1' when flash_state = S_PageProg and xfer_count = "000" and is_edge = '1' else
+                    '0';
+                    
+  blk_in_tlast <= '1' when flash_state = S_PageReadLast else
+                  '0';
+  blk_in_tdata <= in_data;
+  blk_in_tvalid <= in_data_valid when flash_state = S_PageRead or flash_state = S_PageReadLast else
+                   '0';
 
   spi_mosi <= out_reg(7);
   spi_sck  <= flash_clk;

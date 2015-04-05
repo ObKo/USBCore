@@ -47,11 +47,11 @@ entity spi_flasher is
     spi_cs      : out   std_logic;
     spi_sck     : out   std_logic;
     spi_mosi    : out   std_logic;
-    spi_miso    : in    std_logic;
+    spi_miso    : in    std_logic
     
-    dbg_clk     : out   std_logic;
-    dbg_trig    : out   std_logic;
-    dbg         : out   std_logic_vector(14 downto 0)
+    --dbg_clk     : out   std_logic;
+    --dbg_trig    : out   std_logic;
+    --dbg         : out   std_logic_vector(14 downto 0)
   );
 end spi_flasher;
 
@@ -313,13 +313,13 @@ begin
   spi_mosi <= spi_mosi_int;
   spi_miso_int <= spi_miso;
   
-  dbg_clk <= usb_clk;
-  dbg_trig <= '0';
-  dbg(0) <= spi_cs_int;
-  dbg(1) <= spi_sck_int;
-  dbg(2) <= spi_mosi_int;
-  dbg(3) <= spi_miso_int;
-  dbg(14 downto 4) <= (others => '0');
+  --dbg_clk <= usb_clk;
+  --dbg_trig <= '0';
+  --dbg(0) <= spi_cs_int;
+  --dbg(1) <= spi_sck_int;
+  --dbg(2) <= spi_mosi_int;
+  --dbg(3) <= spi_miso_int;
+  --dbg(14 downto 4) <= (others => '0');
   
   COUNT: process(usb_clk) is
   begin

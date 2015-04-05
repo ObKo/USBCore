@@ -156,7 +156,7 @@ BEGIN
   
   ctl_xfer_endpoint <= X"0";
   ctl_xfer_type <= X"C0";
-  ctl_xfer_request <= X"01";
+  ctl_xfer_request <= X"04";
   ctl_xfer_value <= X"0085";
   ctl_xfer_index <= (others => '0');
   ctl_xfer_length <= X"0001";
@@ -180,10 +180,28 @@ BEGIN
     rst <= '0';
     wait for clk_period;
     
+--    blk_out_xfer <= '1';
+--    blk_xfer_out_data_valid <= '1';  
+--    blk_xfer_out_data <= X"A5";
+--    
+--    wait for clk_period;
+--    blk_xfer_out_data <= X"88";
+--
+--    wait for clk_period*255;
+--    blk_out_xfer <= '0';
+--    blk_xfer_out_data_valid <= '0';
+    
     ctl_xfer <= '1';
     ctl_xfer_data_out_valid <= '1';
     wait for clk_period*100;
     ctl_xfer <= '0';
+
+    --blk_in_xfer <= '1';
+    --blk_xfer_in_data_ready <= '1';
+    
+    --wait for clk_period*256;
+    --blk_in_xfer <= '0';
+    --blk_xfer_in_data_ready <= '0';
         
     wait;
   end process;
