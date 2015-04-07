@@ -61,19 +61,23 @@ entity ulpi_port is
     usb_line_state : out std_logic_vector(1 downto 0) := "00";
     usb_rx_active  : out std_logic                    := '0';
     usb_rx_error   : out std_logic                    := '0';
-    usb_vbus_valid : out std_logic                    := '0'
+    usb_vbus_valid : out std_logic                    := '0';
+    -- Reset signal from state controller = ~2.4 uS of SE0
+    -- FIXME: Move state controller into ulpi_port?
+    usb_reset      : in  std_logic
   );
 end ulpi_port;
 
 architecture ulpi_port of ulpi_port is
-  type MACHINE is (S_Init, S_WriteOTGC_A, S_WriteOTGC_D, S_WriteFuncC_A,
-                   S_WriteFuncC_D, S_STP, S_Idle, S_TX, S_TX_Last);
+  type MACHINE is (S_Init, S_WriteReg_A, S_WriteReg_D, S_STP, S_UpdateFunc, 
+                   S_Idle, S_TX, S_TX_Last);
 
   signal state        : MACHINE;
   signal state_after  : MACHINE;
   signal dir_d        : std_logic;
-  signal func_reg     : std_logic_vector(7 downto 0);
   signal tx_pid       : std_logic_vector(3 downto 0);
+  
+  signal reg_data     : std_logic_vector(7 downto 0);
 
   signal buf_data     : std_logic_vector(7 downto 0);
   signal buf_last     : std_logic;
@@ -125,42 +129,30 @@ begin
 
           case state is
             when S_Init =>
-              func_reg      <= b"0_1_0_00_1_01";
               ulpi_data_out <= X"8A";
-              state         <= S_WriteOTGC_A;
+              reg_data      <= X"00";
+              state         <= S_WriteReg_A;
+              state_after   <= S_UpdateFunc;
 
-            when S_WriteOTGC_A =>
+            when S_WriteReg_A =>
               if ulpi_nxt = '1' then
-                ulpi_data_out <= X"00";
-                state         <= S_WriteOTGC_D;
+                ulpi_data_out <= reg_data;
+                state         <= S_WriteReg_D;
               end if;
 
-            when S_WriteOTGC_D =>
+            when S_WriteReg_D =>
               if ulpi_nxt = '1' then
                 ulpi_data_out <= X"00";
-                state_after   <= S_WriteFuncC_A;
                 state         <= S_STP;
               end if;
-
-            when S_WriteFuncC_A =>
-              if ulpi_nxt = '1' then
-                ulpi_data_out <= func_reg;
-                state         <= S_WriteFuncC_D;
-              end if;
-
-            when S_WriteFuncC_D =>
-              if ulpi_nxt = '1' then
-                ulpi_data_out <= X"00";
-                state_after   <= S_Idle;
-                state         <= S_STP;
-              end if;
+              
+            when S_UpdateFunc =>
+              reg_data      <= b"0_1_0_00_1_01";
+              ulpi_data_out <= X"84";
+              state         <= S_WriteReg_A;
+              state_after   <= S_Idle;
 
             when S_STP =>
-              if state_after = S_WriteFuncC_A then
-                ulpi_data_out <= X"84";
-              else
-                ulpi_data_out <= X"00";
-              end if;
               state <= state_after;
 
             when S_Idle =>

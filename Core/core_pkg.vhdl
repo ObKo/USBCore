@@ -94,7 +94,9 @@ package usbcore is
       usb_line_state : out std_logic_vector(1 downto 0);
       usb_rx_active  : out std_logic;
       usb_rx_error   : out std_logic;
-      usb_vbus_valid : out std_logic
+      usb_vbus_valid : out std_logic;
+      
+      usb_reset      : in  std_logic
       );
   end component;
 

@@ -216,7 +216,9 @@ begin
       usb_line_state => usb_line_state,
       usb_rx_active  => usb_rx_active,
       usb_rx_error   => usb_rx_error,
-      usb_vbus_valid => usb_vbus_valid
+      usb_vbus_valid => usb_vbus_valid,
+      
+      usb_reset      => usb_reset_int
       );
 
   PACKET_CONTROLLER : usb_packet
