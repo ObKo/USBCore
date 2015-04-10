@@ -110,6 +110,8 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    libusb_claim_interface(dev, 0);
+
     int ret;
 
     if (cmd == 'w')

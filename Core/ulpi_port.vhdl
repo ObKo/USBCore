@@ -31,6 +31,9 @@ library work;
 use work.USBCore.all;
 
 entity ulpi_port is
+  generic (
+    HIGH_SPEED: boolean := true
+  );
   port (
     rst            : in  std_logic;
 
@@ -69,22 +72,31 @@ entity ulpi_port is
 end ulpi_port;
 
 architecture ulpi_port of ulpi_port is
-  type MACHINE is (S_Init, S_WriteReg_A, S_WriteReg_D, S_STP, S_UpdateFunc, 
-                   S_Idle, S_TX, S_TX_Last);
+  type MACHINE is (S_Init, S_WriteReg_A, S_WriteReg_D, S_STP, S_SwitchToFS, S_WaitResetDone,
+                   S_Idle, S_TX, S_TX_Last, S_ChirpStart, S_ChirpStartK, S_ChirpK,
+                   S_ChirpKJ);
 
-  signal state        : MACHINE;
-  signal state_after  : MACHINE;
-  signal dir_d        : std_logic;
-  signal tx_pid       : std_logic_vector(3 downto 0);
+  signal state            : MACHINE;
+  signal state_after      : MACHINE;
+  signal dir_d            : std_logic;
+  signal tx_pid           : std_logic_vector(3 downto 0);
   
-  signal reg_data     : std_logic_vector(7 downto 0);
+  signal reg_data         : std_logic_vector(7 downto 0);
 
-  signal buf_data     : std_logic_vector(7 downto 0);
-  signal buf_last     : std_logic;
-  signal buf_valid    : std_logic;
+  signal buf_data         : std_logic_vector(7 downto 0);
+  signal buf_last         : std_logic;
+  signal buf_valid        : std_logic;
 
-  signal tx_eop       : std_logic := '0';
-  signal bus_tx_ready : std_logic := '0';
+  signal tx_eop           : std_logic := '0';
+  signal bus_tx_ready     : std_logic := '0';
+  
+  signal chirp_counter    : std_logic_vector(16 downto 0);
+  signal chirp_kj_counter : std_logic_vector(2 downto 0);
+  signal chirp_kj_prev    : std_logic;
+  signal chirp_kj         : std_logic;
+  
+  signal chirp_k_done     : std_logic;
+  signal is_hs            : std_logic := '0';
 begin
   OUTER : process(ulpi_clk) is
   begin
@@ -97,6 +109,9 @@ begin
       end if;
     end if;
   end process;
+        
+  chirp_kj <= '1' when ulpi_data_in(1 downto 0) = "10" else
+              '0';
 
   FSM : process(ulpi_clk) is
   begin
@@ -123,6 +138,18 @@ begin
           else
             usb_vbus_valid <= '0';
           end if;
+                    
+          if state = S_ChirpKJ then
+            if chirp_kj /= chirp_kj_prev then
+              chirp_counter <= (others => '0');
+              if chirp_kj = '0' then
+                chirp_kj_counter <= chirp_kj_counter + 1;
+              end if;
+              chirp_kj_prev <= chirp_kj;
+            else
+              chirp_counter <= chirp_counter + 1;
+            end if;
+          end if;
 
         elsif ulpi_dir = '0' then
           usb_rx_active <= '0';
@@ -132,7 +159,7 @@ begin
               ulpi_data_out <= X"8A";
               reg_data      <= X"00";
               state         <= S_WriteReg_A;
-              state_after   <= S_UpdateFunc;
+              state_after   <= S_SwitchToFS;
 
             when S_WriteReg_A =>
               if ulpi_nxt = '1' then
@@ -146,17 +173,29 @@ begin
                 state         <= S_STP;
               end if;
               
-            when S_UpdateFunc =>
+            when S_SwitchToFS =>
               reg_data      <= b"0_1_0_00_1_01";
               ulpi_data_out <= X"84";
               state         <= S_WriteReg_A;
-              state_after   <= S_Idle;
+              is_hs         <= '0';
+              state_after   <= S_WaitResetDone;
+              
+            when S_WaitResetDone =>
+              if usb_reset = '0' then
+                state <= S_Idle;
+              end if;
 
             when S_STP =>
               state <= state_after;
 
             when S_Idle =>
-              if bus_tx_ready = '1' and axis_tx_tvalid = '1' then
+              if usb_reset = '1' then
+                if is_hs = '0' and HIGH_SPEED then
+                  state <= S_ChirpStart;
+                else
+                  state <= S_SwitchToFS;
+                end if;
+              elsif bus_tx_ready = '1' and axis_tx_tvalid = '1' then
                 ulpi_data_out <= "0100" & axis_tx_tdata(3 downto 0);
                 buf_valid     <= '0';
                 if axis_tx_tlast = '1' then
@@ -196,6 +235,42 @@ begin
                 state_after   <= S_Idle;
                 state         <= S_STP;
               end if;
+              
+            when S_ChirpStart =>
+              reg_data      <= b"0_1_0_10_1_00";
+              ulpi_data_out <= X"84";
+              state         <= S_WriteReg_A;
+              state_after   <= S_ChirpStartK;
+              
+            when S_ChirpStartK =>
+              if ulpi_nxt = '1' then
+                ulpi_data_out <= X"00";
+                state <= S_ChirpK;
+                chirp_counter <= (others => '0');
+              else
+                ulpi_data_out <= X"40";
+              end if;
+            
+            when S_ChirpK =>
+              if chirp_counter > 66000 then
+                ulpi_data_out <= X"00";
+                state         <= S_STP;
+                state_after   <= S_ChirpKJ;
+                chirp_kj_prev <= '0';
+                chirp_kj_counter <= (others => '0');
+              else
+                chirp_counter <= chirp_counter + 1;
+              end if;
+              
+            when S_ChirpKJ =>
+              if chirp_kj_counter > 3 AND chirp_counter > 2000 then
+                reg_data      <= b"0_1_0_00_0_00";
+                ulpi_data_out <= X"84";
+                state         <= S_WriteReg_A;
+                state_after   <= S_Idle;
+                is_hs         <= '1';
+              end if;
+              chirp_counter <= chirp_counter + 1;
 
           end case;
         end if;

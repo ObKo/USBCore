@@ -48,14 +48,12 @@ entity spi_flasher is
     spi_sck     : out   std_logic;
     spi_mosi    : out   std_logic;
     spi_miso    : in    std_logic
-    
-    --dbg_clk     : out   std_logic;
-    --dbg_trig    : out   std_logic;
-    --dbg         : out   std_logic_vector(14 downto 0)
   );
 end spi_flasher;
 
 architecture spi_flasher of spi_flasher is
+  constant USE_HIGH_SPEED: boolean := true;
+  
   constant CONFIG_DESC : BYTE_ARRAY(0 to 8) := (
     X"09",                              -- bLength = 9
     X"02",                              -- bDescriptionType = Configuration Descriptor
@@ -84,7 +82,7 @@ architecture spi_flasher of spi_flasher is
     X"05",                              -- bDescriptorType = Endpoint Descriptor
     X"81",                              -- bEndpointAddress = IN1
     B"00_00_00_10",                     -- bmAttributes = Bulk
-    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
+    X"00", X"02",                       -- wMaxPacketSize = 512 bytes
     X"00"                               -- bInterval
     );
 
@@ -93,7 +91,7 @@ architecture spi_flasher of spi_flasher is
     X"05",                              -- bDescriptorType = Endpoint Descriptor
     X"01",                              -- bEndpointAddress = OUT1
     B"00_00_00_10",                     -- bmAttributes = Bulk
-    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
+    X"00", X"02",                       -- wMaxPacketSize = 512 bytes
     X"00"                               -- bInterval
     );
 
@@ -142,11 +140,6 @@ architecture spi_flasher of spi_flasher is
   signal blk_xfer_out_data_valid: std_logic;
   
   signal led_counter            : std_logic_vector(25 downto 0);
-  
-  signal spi_cs_int             : std_logic;
-  signal spi_sck_int            : std_logic;
-  signal spi_mosi_int           : std_logic;
-  signal spi_miso_int           : std_logic;
   
   component usb_flasher is
   port (
@@ -212,7 +205,8 @@ begin
     PRODUCT => "SPI Flasher",
     SERIAL => "",
     CONFIG_DESC => CONFIG_DESC & INTERFACE_DESC &
-                   EP1_IN_DESC & EP1_OUT_DESC
+                   EP1_IN_DESC & EP1_OUT_DESC,
+    HIGH_SPEED => USE_HIGH_SPEED
   )
   port map (    
 	ulpi_data_in => ulpi_data_in,
@@ -302,24 +296,11 @@ begin
     blk_xfer_out_data => blk_xfer_out_data,
     blk_xfer_out_data_valid => blk_xfer_out_data_valid,
     
-    spi_cs => spi_cs_int,
-    spi_sck => spi_sck_int,
-    spi_mosi => spi_mosi_int,
-    spi_miso => spi_miso_int
+    spi_cs => spi_cs,
+    spi_sck => spi_sck,
+    spi_mosi => spi_mosi,
+    spi_miso => spi_miso
   );
-  
-  spi_cs <= spi_cs_int;
-  spi_sck <= spi_sck_int;
-  spi_mosi <= spi_mosi_int;
-  spi_miso_int <= spi_miso;
-  
-  --dbg_clk <= usb_clk;
-  --dbg_trig <= '0';
-  --dbg(0) <= spi_cs_int;
-  --dbg(1) <= spi_sck_int;
-  --dbg(2) <= spi_mosi_int;
-  --dbg(3) <= spi_miso_int;
-  --dbg(14 downto 4) <= (others => '0');
   
   COUNT: process(usb_clk) is
   begin

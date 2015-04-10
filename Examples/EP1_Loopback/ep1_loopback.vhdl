@@ -45,15 +45,12 @@ entity ep1_loopback is
     ulpi_clk60  : in    std_logic;
     
     main_clk    : in    std_logic
-        
---    dbg         : out   std_logic_vector(13 downto 0);
---    dbg_clk     : out   std_logic;
---    dbg_trig    : out   std_logic;
---    rstn        : in    std_logic
   );
 end ep1_loopback;
 
 architecture ep1_loopback of ep1_loopback is
+  constant USE_HIGH_SPEED: boolean := true;
+  
   constant CONFIG_DESC : BYTE_ARRAY(0 to 8) := (
     X"09",                              -- bLength = 9
     X"02",                              -- bDescriptionType = Configuration Descriptor
@@ -82,7 +79,7 @@ architecture ep1_loopback of ep1_loopback is
     X"05",                              -- bDescriptorType = Endpoint Descriptor
     X"81",                              -- bEndpointAddress = IN1
     B"00_00_00_10",                     -- bmAttributes = Bulk
-    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
+    X"00", X"02",                       -- wMaxPacketSize = 512 bytes
     X"00"                               -- bInterval
     );
 
@@ -91,7 +88,7 @@ architecture ep1_loopback of ep1_loopback is
     X"05",                              -- bDescriptorType = Endpoint Descriptor
     X"01",                              -- bEndpointAddress = OUT1
     B"00_00_00_10",                     -- bmAttributes = Bulk
-    X"40", X"00",                       -- wMaxPacketSize = 64 bytes
+    X"00", X"02",                       -- wMaxPacketSize = 512 bytes
     X"00"                               -- bInterval
     );
 
@@ -150,6 +147,10 @@ architecture ep1_loopback of ep1_loopback is
   signal ep1_out_axis_tlast     : std_logic;
   
   signal led_counter            : std_logic_vector(25 downto 0);
+  
+  signal ulpi_stp_int           : std_logic;
+  
+  
 begin
   ULPI_IO: for i in 7 downto 0 generate
   begin
@@ -170,7 +171,8 @@ begin
     PRODUCT => "Endpoint 1 Loopback Device",
     SERIAL => "",
     CONFIG_DESC => CONFIG_DESC & INTERFACE_DESC &
-                   EP1_IN_DESC & EP1_OUT_DESC
+                   EP1_IN_DESC & EP1_OUT_DESC,
+    HIGH_SPEED => USE_HIGH_SPEED
   )
   port map (    
 	ulpi_data_in => ulpi_data_in,

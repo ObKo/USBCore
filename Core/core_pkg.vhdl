@@ -37,7 +37,8 @@ package usbcore is
       MANUFACTURER : string;
       PRODUCT      : string;
       SERIAL       : string;
-      CONFIG_DESC  : BYTE_ARRAY
+      CONFIG_DESC  : BYTE_ARRAY;
+      HIGH_SPEED   : boolean
     );
     port (
       rst                     : in  std_logic;
@@ -62,15 +63,18 @@ package usbcore is
       ctl_xfer_data_in_last   : out std_logic;
       ctl_xfer_data_in_ready  : in  std_logic;
 
+      device_address          : out std_logic_vector(6 downto 0);
       current_configuration   : out std_logic_vector(7 downto 0);
       configured              : out std_logic;
 
-      reset_data_bit_toggling : out std_logic;
       standart_request        : out std_logic
       );
   end component;
   
   component ulpi_port is
+    generic (
+      HIGH_SPEED: boolean
+    );
     port (
       rst            : in  std_logic;
 
@@ -143,11 +147,15 @@ package usbcore is
       tx_trn_data_last    : in  std_logic;
 
       start_of_frame      : out std_logic;
-      crc_error           : out std_logic
+      crc_error           : out std_logic;
+      device_address      : in  std_logic_vector(6 downto 0)
       );
   end component;
 
   component usb_xfer is
+    generic (
+      HIGH_SPEED: boolean
+    );
     port (
       rst                     : in  std_logic;
       clk                     : in  std_logic;
@@ -211,9 +219,7 @@ package usbcore is
       -- Can accept full packet
       blk_xfer_out_ready_read : in  std_logic;
       blk_xfer_out_data       : out std_logic_vector(7 downto 0);
-      blk_xfer_out_data_valid : out std_logic;
-
-      reset_data_bit_toggling : in  std_logic
+      blk_xfer_out_data_valid : out std_logic
       );
   end component;
 
@@ -237,7 +243,8 @@ package usbcore is
     MANUFACTURER            : string;
     PRODUCT                 : string;
     SERIAL                  : string;
-    CONFIG_DESC             : BYTE_ARRAY
+    CONFIG_DESC             : BYTE_ARRAY;
+    HIGH_SPEED              : boolean
   );
   port (
     ulpi_data_in            : in  std_logic_vector(7 downto 0);

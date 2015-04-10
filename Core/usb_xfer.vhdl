@@ -31,6 +31,9 @@ library work;
 use work.USBCore.all;
 
 entity usb_xfer is
+  generic (
+    HIGH_SPEED:  boolean := true
+  );
   port (
     rst                     : in  std_logic;
     clk                     : in  std_logic;
@@ -98,9 +101,7 @@ entity usb_xfer is
     -- Can accept full packet
     blk_xfer_out_ready_read : in  std_logic;
     blk_xfer_out_data       : out std_logic_vector(7 downto 0);
-    blk_xfer_out_data_valid : out std_logic;
-
-    reset_data_bit_toggling : in  std_logic
+    blk_xfer_out_data_valid : out std_logic
     );
 end usb_xfer;
 
@@ -111,7 +112,7 @@ architecture usb_xfer of usb_xfer is
                    S_ControlStatusOUT_ACK, S_ControlStatusIN, S_ControlStatusIN_MyACK, S_ControlStatusIN_D,
                    S_ControlStatusIN_ACK, S_BulkIN, S_BulkIN_MyACK, S_BulkIN_ACK, S_BulkOUT,
                    S_BulkOUT_ACK);
-
+                                      
   signal state               : MACHINE := S_Idle;
 
   signal rx_counter          : std_logic_vector(10 downto 0);
@@ -125,7 +126,9 @@ architecture usb_xfer of usb_xfer is
 
   signal ctl_status          : std_logic_vector(1 downto 0);
   signal ctl_xfer_eop        : std_logic;
-
+  
+  signal tx_counter_over     : std_logic;
+  
 begin
   RX_DATA_COUNT : process(clk) is
   begin
@@ -146,9 +149,7 @@ begin
         data_types <= (others => '0');
       else
         i := to_integer(unsigned(current_endpoint));
-        if reset_data_bit_toggling = '1' then
-          data_types <= (others => '0');
-        elsif state = S_ControlSetupACK then
+        if state = S_ControlSetupACK then
           data_types(i) <= '1';
         elsif state = S_ControlDataIN_ACK then
           if rx_trn_hsk_received = '1' and rx_trn_hsk_type = "00" then
@@ -373,11 +374,14 @@ begin
 
           when S_BulkIN =>
             if blk_xfer_in_data_valid = '1' and tx_trn_data_ready = '1' then
-              if tx_counter(5 downto 0) = 63 or blk_xfer_in_data_last = '1' then
+              if tx_counter_over = '1' or blk_xfer_in_data_last = '1' then
                 tx_trn_data_start <= '0';
                 state             <= S_BulkIN_ACK;
               end if;
               tx_counter <= tx_counter + 1;
+            elsif blk_xfer_in_data_valid = '0' then
+              tx_trn_data_start <= '0';
+              state             <= S_BulkIN_ACK;
             end if;
 
           when S_BulkIN_ACK =>
@@ -435,9 +439,13 @@ begin
   tx_trn_data_valid <= ctl_xfer_data_in_valid when state = S_ControlDataIN else
                        blk_xfer_in_data_valid when state = S_BulkIN else
                        '0';
+                       
+  tx_counter_over <= '1' when tx_counter(5 downto 0) = 63 AND HIGH_SPEED = false else
+                     '1' when tx_counter(8 downto 0) = 511 AND HIGH_SPEED = true else
+                     '0';
 
   tx_trn_data_last <= '1' when state = S_ControlDataIN and (tx_counter(5 downto 0) = 63 or tx_counter = ctl_xfer_length_int - 1) else
-                      '1'                   when state = S_BulkIN and (tx_counter(5 downto 0) = 63 or blk_xfer_in_data_last = '1') else
+                      '1'                   when state = S_BulkIN and (tx_counter_over = '1' or blk_xfer_in_data_last = '1') else
                       '1'                   when state = S_ControlStatusIN_D else
                       '1'                   when state = S_ControlDataIN_Z else
                       ctl_xfer_data_in_last when state = S_ControlDataIN else

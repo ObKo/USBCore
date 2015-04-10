@@ -57,7 +57,8 @@ entity usb_std_request is
       X"00",        -- bInterfaceSubClass
       X"00",        -- bInterfaceProtocol
       X"00"         -- iInterface
-      )
+      );
+    HIGH_SPEED: boolean := true
     );
   port (
     rst                     : in  std_logic;
@@ -80,11 +81,10 @@ entity usb_std_request is
     ctl_xfer_data_in_valid  : out std_logic;
     ctl_xfer_data_in_last   : out std_logic;
     ctl_xfer_data_in_ready  : in  std_logic;
-
+    
+    device_address          : out std_logic_vector(6 downto 0);
     current_configuration   : out std_logic_vector(7 downto 0);
     configured              : out std_logic := '0';
-
-    reset_data_bit_toggling : out std_logic;
     
     standart_request        : out std_logic
     );
@@ -136,10 +136,10 @@ architecture usb_std_request of usb_std_request is
     end if;
   end function;
 
-  constant DEVICE_DESC : BYTE_ARRAY(0 to 17) := (
+  constant DEVICE_DESC_FS : BYTE_ARRAY(0 to 17) := (
     X"12",                              -- bLength = 18
     X"01",                              -- bDescriptionType = Device Descriptor
-    X"01", X"10",                       -- bcdUSB = USB 1.1
+    X"10", X"01",                       -- bcdUSB = USB 1.1
     X"FF",                              -- bDeviceClass = None
     X"00",                              -- bDeviceSubClass
     X"00",                              -- bDeviceProtocol
@@ -152,6 +152,25 @@ architecture usb_std_request of usb_std_request is
     indexOrZero(SERIAL, X"03"),         -- iSerialNumber
     X"01"                               -- bNumConfigurations = 1
     );
+    
+  constant DEVICE_DESC_HS : BYTE_ARRAY(0 to 17) := (
+    X"12",                              -- bLength = 18
+    X"01",                              -- bDescriptionType = Device Descriptor
+    X"00", X"02",                       -- bcdUSB = USB 2.0
+    X"FF",                              -- bDeviceClass = None
+    X"00",                              -- bDeviceSubClass
+    X"00",                              -- bDeviceProtocol
+    X"40",                              -- bMaxPacketSize = 64
+    VENDOR_ID(7 downto 0), VENDOR_ID(15 downto 8),    -- idVendor
+    PRODUCT_ID(7 downto 0), PRODUCT_ID(15 downto 8),  -- idProduct
+    X"00", X"00",                       -- bcdDevice
+    indexOrZero(MANUFACTURER, X"01"),   -- iManufacturer
+    indexOrZero(PRODUCT, X"02"),        -- iProduct
+    indexOrZero(SERIAL, X"03"),         -- iSerialNumber
+    X"01"                               -- bNumConfigurations = 1
+    );
+    
+  constant DEVICE_DESC : BYTE_ARRAY(0 to 17) := selectArray(HIGH_SPEED, DEVICE_DESC_HS, DEVICE_DESC_FS);
 
   constant STR_DESC : BYTE_ARRAY(0 to 3) := (
     X"04",                              -- bLength = 4
@@ -242,10 +261,10 @@ begin
     if rising_edge(clk) then
       if rst = '1' then
         state <= S_Idle;
+        device_address <= (others => '0');
       else
         case state is
           when S_Idle =>
-            reset_data_bit_toggling <= '0';
             if ctl_xfer = '1' then
               if req_type = "001" or req_type = "011" or req_type = "101" then
                 state <= S_GetDescriptor;
@@ -260,6 +279,7 @@ begin
           when S_SetAddress =>
             if ctl_xfer = '0' then
               state <= S_Idle;
+              device_address <= ctl_xfer_value(6 downto 0);
             end if;
 
           when S_GetDescriptor =>
@@ -269,7 +289,6 @@ begin
 
           when S_SetConfiguration =>
             if ctl_xfer = '0' then
-              reset_data_bit_toggling <= '1';
               configured              <= '1';
               state                   <= S_Idle;
             end if;

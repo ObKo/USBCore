@@ -57,7 +57,8 @@ entity usb_tlp is
       X"00",        -- bInterfaceSubClass
       X"00",        -- bInterfaceProtocol
       X"00"         -- iInterface
-      )
+      );
+    HIGH_SPEED   : boolean := true
     );
   port (
     ulpi_data_in            : in  std_logic_vector(7 downto 0);
@@ -182,8 +183,6 @@ architecture usb_tlp of usb_tlp is
   signal ctl_xfer_data_in_valid_std  : std_logic;
   signal ctl_xfer_data_in_last_std   : std_logic;
 
-  signal reset_data_bit_toggling     : std_logic;
-
   signal current_configuration       : std_logic_vector(7 downto 0);
 
   signal usb_reset_int               : std_logic;
@@ -191,8 +190,12 @@ architecture usb_tlp of usb_tlp is
   
   signal standart_request            : std_logic;
   
+  signal device_address              : std_logic_vector(6 downto 0);  
 begin
   ULPI : ulpi_port
+    generic map (
+      HIGH_SPEED => HIGH_SPEED
+    )
     port map (
       rst            => '0',
 
@@ -264,10 +267,14 @@ begin
       tx_trn_data_last    => tx_trn_data_last,
 
       start_of_frame      => usb_sof,
-      crc_error           => usb_crc_error_int
+      crc_error           => usb_crc_error_int,
+      device_address      => device_address
       );
 
   TRANSFER_CONTROLLER : usb_xfer
+    generic map (
+      HIGH_SPEED => HIGH_SPEED
+    )
     port map (
       rst                     => usb_reset_int,
       clk                     => ulpi_clk60,
@@ -329,9 +336,7 @@ begin
 
       blk_xfer_out_ready_read => blk_xfer_out_ready_read,
       blk_xfer_out_data       => blk_xfer_out_data,
-      blk_xfer_out_data_valid => blk_xfer_out_data_valid,
-
-      reset_data_bit_toggling => reset_data_bit_toggling
+      blk_xfer_out_data_valid => blk_xfer_out_data_valid
       );
 
   STD_REQ_CONTROLLER : usb_std_request
@@ -341,7 +346,8 @@ begin
       MANUFACTURER => MANUFACTURER,
       PRODUCT      => PRODUCT,
       SERIAL       => SERIAL,
-      CONFIG_DESC  => CONFIG_DESC
+      CONFIG_DESC  => CONFIG_DESC,
+      HIGH_SPEED   => HIGH_SPEED
       )
     port map (
       rst                     => usb_reset_int,
@@ -365,10 +371,10 @@ begin
       ctl_xfer_data_in_last   => ctl_xfer_data_in_last_std,
       ctl_xfer_data_in_ready  => ctl_xfer_data_in_ready_int,
 
+      device_address          => device_address,
       current_configuration   => current_configuration,
       configured              => usb_configured,
-
-      reset_data_bit_toggling => reset_data_bit_toggling,
+      
       standart_request        => standart_request
       );
 

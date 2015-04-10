@@ -45,13 +45,13 @@ end usb_state;
 
 architecture usb_state of usb_state is
   constant SUSPEND_TIME : integer := 180000;  -- = 3 ms
-  constant RESET_TIME   : integer := 240;     -- = 4 us 
+  constant RESET_TIME   : integer := 192000;  -- = 3 ms 
 
   type MACHINE is (S_Idle, S_Reset, S_Suspend);
   signal state          : MACHINE := S_Idle;
 
   signal j_counter      : std_logic_vector(17 downto 0);
-  signal se0_counter    : std_logic_vector(7 downto 0);
+  signal se0_counter    : std_logic_vector(17 downto 0);
 
 begin
   COUNTER : process(clk) is

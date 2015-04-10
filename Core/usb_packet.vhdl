@@ -77,7 +77,8 @@ entity usb_packet is
     tx_trn_data_last    : in  std_logic;
 
     start_of_frame      : out std_logic;
-    crc_error           : out std_logic
+    crc_error           : out std_logic;
+    device_address      : in  std_logic_vector(6 downto 0)
     );
 end usb_packet;
 
@@ -245,11 +246,13 @@ begin
                 token_crc5              <= axis_rx_tdata(7 downto 3);
               end if;
             elsif usb_rx_active = '0' or usb_rx_error = '1' then
-              if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
-                trn_start <= '1';
-              end if;
-              if token_crc5 /= rx_crc5 then
-                crc_error <= '1';
+              if device_address = token_data(6 downto 0) then
+                if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
+                  trn_start <= '1';
+                end if;
+                if token_crc5 /= rx_crc5 then
+                  crc_error <= '1';
+                end if;
               end if;
               rx_state <= S_Idle;
             end if;
@@ -320,6 +323,8 @@ begin
               if tx_trn_data_last = '1' then
                 tx_state <= S_DataCRC1;
               end if;
+            elsif tx_trn_data_valid = '0' then
+              tx_state <= S_DataCRC2;
             end if;
 
           when S_DataCRC1 =>
@@ -339,12 +344,12 @@ begin
 
   axis_tx_tdata <= (not (tx_trn_data_type & "11")) & tx_trn_data_type & "11" when tx_state = S_DataPID else
                    (not (tx_trn_hsk_type & "10")) & tx_trn_hsk_type & "10" when tx_state = S_HSK else
-                   tx_crc16_r(7 downto 0)                                  when tx_state = S_DataCRC1 else
+                   tx_crc16_r(7 downto 0)                                  when tx_state = S_DataCRC1 or (tx_state = S_Data and tx_trn_data_valid = '0') else
                    tx_crc16_r(15 downto 8)                                 when tx_state = S_DataCRC2 else
                    tx_trn_data;
 
   axis_tx_tvalid <= '1' when tx_state = S_DataPID or tx_state = S_HSK or tx_state = S_DataCRC1 or tx_state = S_DataCRC2 else
-                    tx_trn_data_valid when tx_state = S_Data else
+                    '1' when tx_state = S_Data else
                     '0';
 
   axis_tx_tlast <= '1' when tx_state = S_HSK else
