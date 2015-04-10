@@ -216,12 +216,12 @@ begin
       axis_tx_tlast  => axis_tx_tlast,
       axis_tx_tdata  => axis_tx_tdata,
 
-      usb_line_state => usb_line_state,
       usb_rx_active  => usb_rx_active,
       usb_rx_error   => usb_rx_error,
       usb_vbus_valid => usb_vbus_valid,
-      
-      usb_reset      => usb_reset_int
+      usb_reset      => usb_reset_int,
+      usb_idle       => usb_idle,
+      usb_suspend    => usb_suspend
       );
 
   PACKET_CONTROLLER : usb_packet
@@ -376,18 +376,6 @@ begin
       configured              => usb_configured,
       
       standart_request        => standart_request
-      );
-
-  STATE_CONTROLLER : usb_state
-    port map (
-      rst            => '0',
-      clk            => ulpi_clk60,
-
-      usb_line_state => usb_line_state,
-
-      reset          => usb_reset_int,
-      idle           => usb_idle,
-      suspend        => usb_suspend
       );
 
   usb_clk       <= ulpi_clk60;

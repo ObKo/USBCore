@@ -94,13 +94,13 @@ package usbcore is
       axis_tx_tready : out std_logic;
       axis_tx_tlast  : in  std_logic;
       axis_tx_tdata  : in  std_logic_vector(7 downto 0);
-
-      usb_line_state : out std_logic_vector(1 downto 0);
+      
       usb_rx_active  : out std_logic;
       usb_rx_error   : out std_logic;
       usb_vbus_valid : out std_logic;
-      
-      usb_reset      : in  std_logic
+      usb_reset      : out std_logic;
+      usb_idle       : out std_logic;
+      usb_suspend    : out std_logic
       );
   end component;
 
@@ -220,19 +220,6 @@ package usbcore is
       blk_xfer_out_ready_read : in  std_logic;
       blk_xfer_out_data       : out std_logic_vector(7 downto 0);
       blk_xfer_out_data_valid : out std_logic
-      );
-  end component;
-
-  component usb_state is
-    port (
-      rst            : in  std_logic;
-      clk            : in  std_logic;
-
-      usb_line_state : in  std_logic_vector(1 downto 0);
-
-      reset          : out std_logic;
-      idle           : out std_logic;
-      suspend        : out std_logic
       );
   end component;
   

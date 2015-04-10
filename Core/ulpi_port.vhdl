@@ -57,22 +57,22 @@ entity ulpi_port is
     -- First data is always PID (in 4 least significant bits, 0 - NOPID packet)
     axis_tx_tdata  : in  std_logic_vector(7 downto 0);
 
-    -- 00 - SE0
-    -- 01 - J
-    -- 10 - K
-    -- 11 - SE1
-    usb_line_state : out std_logic_vector(1 downto 0) := "00";
-    usb_rx_active  : out std_logic                    := '0';
-    usb_rx_error   : out std_logic                    := '0';
-    usb_vbus_valid : out std_logic                    := '0';
-    -- Reset signal from state controller = ~2.4 uS of SE0
-    -- FIXME: Move state controller into ulpi_port?
-    usb_reset      : in  std_logic
+    usb_rx_active  : out std_logic;
+    usb_rx_error   : out std_logic;
+    usb_vbus_valid : out std_logic;
+    usb_reset      : out std_logic;
+    usb_idle       : out std_logic;
+    usb_suspend    : out std_logic
   );
 end ulpi_port;
 
 architecture ulpi_port of ulpi_port is
-  type MACHINE is (S_Init, S_WriteReg_A, S_WriteReg_D, S_STP, S_SwitchToFS, S_WaitResetDone,
+  constant SUSPEND_TIME : integer := 190000;  -- = ~3 ms
+  constant RESET_TIME   : integer := 190000;  -- = ~3 ms 
+  constant CHIRP_K_TIME : integer := 66000;   -- = ~1 ms  
+  constant CHIRP_KJ_TIME: integer := 2000;    -- = ~2 us 
+
+  type MACHINE is (S_Init, S_WriteReg_A, S_WriteReg_D, S_STP, S_SwitchToFS, S_Reset, S_Suspend,
                    S_Idle, S_TX, S_TX_Last, S_ChirpStart, S_ChirpStartK, S_ChirpK,
                    S_ChirpKJ);
 
@@ -90,13 +90,11 @@ architecture ulpi_port of ulpi_port is
   signal tx_eop           : std_logic := '0';
   signal bus_tx_ready     : std_logic := '0';
   
-  signal chirp_counter    : std_logic_vector(16 downto 0);
   signal chirp_kj_counter : std_logic_vector(2 downto 0);
-  signal chirp_kj_prev    : std_logic;
-  signal chirp_kj         : std_logic;
+  signal hs_enabled       : std_logic := '0';
   
-  signal chirp_k_done     : std_logic;
-  signal is_hs            : std_logic := '0';
+  signal usb_line_state   : std_logic_vector(1 downto 0);
+  signal state_counter    : std_logic_vector(17 downto 0);
 begin
   OUTER : process(ulpi_clk) is
   begin
@@ -109,9 +107,27 @@ begin
       end if;
     end if;
   end process;
-        
-  chirp_kj <= '1' when ulpi_data_in(1 downto 0) = "10" else
-              '0';
+              
+  STATE_COUNT: process(ulpi_clk) is
+  begin
+    if rising_edge(ulpi_clk) then
+      if dir_d = ulpi_dir and ulpi_dir = '1' and ulpi_nxt = '0' AND ulpi_data_in(1 downto 0) /= usb_line_state then
+        if state = S_ChirpKJ then 
+          if ulpi_data_in(1 downto 0) = "01" then
+            chirp_kj_counter <= chirp_kj_counter + 1;
+          end if;
+        else
+          chirp_kj_counter <= (others => '0');
+        end if;
+        usb_line_state <= ulpi_data_in(1 downto 0);
+        state_counter <= (others => '0');
+      elsif state = S_ChirpStartK then
+        state_counter <= (others => '0');
+      else
+        state_counter <= state_counter + 1;
+      end if;
+    end if;
+  end process;
 
   FSM : process(ulpi_clk) is
   begin
@@ -120,8 +136,6 @@ begin
       
       if dir_d = ulpi_dir then
         if ulpi_dir = '1' and ulpi_nxt = '0' then
-          usb_line_state <= ulpi_data_in(1 downto 0);
-
           if ulpi_data_in(5 downto 4) = "01" then
             usb_rx_active <= '1';
             usb_rx_error  <= '0';
@@ -137,18 +151,6 @@ begin
             usb_vbus_valid <= '1';
           else
             usb_vbus_valid <= '0';
-          end if;
-                    
-          if state = S_ChirpKJ then
-            if chirp_kj /= chirp_kj_prev then
-              chirp_counter <= (others => '0');
-              if chirp_kj = '0' then
-                chirp_kj_counter <= chirp_kj_counter + 1;
-              end if;
-              chirp_kj_prev <= chirp_kj;
-            else
-              chirp_counter <= chirp_counter + 1;
-            end if;
           end if;
 
         elsif ulpi_dir = '0' then
@@ -177,11 +179,19 @@ begin
               reg_data      <= b"0_1_0_00_1_01";
               ulpi_data_out <= X"84";
               state         <= S_WriteReg_A;
-              is_hs         <= '0';
-              state_after   <= S_WaitResetDone;
+              hs_enabled    <= '0';
+              state_after   <= S_Reset;
               
-            when S_WaitResetDone =>
-              if usb_reset = '0' then
+            when S_Reset =>
+              usb_reset <= '1';
+              if usb_line_state /= "00" then
+                state <= S_Idle;
+              end if;
+              
+            when S_Suspend =>
+              -- Should be J state for 20 ms, but I'm too lazy
+              -- FIXME: Need valid resume sequence for HS
+              if usb_line_state /= "01" then
                 state <= S_Idle;
               end if;
 
@@ -189,12 +199,15 @@ begin
               state <= state_after;
 
             when S_Idle =>
-              if usb_reset = '1' then
-                if is_hs = '0' and HIGH_SPEED then
+              usb_reset <= '0';
+              if usb_line_state = "00" and state_counter > RESET_TIME then
+                if hs_enabled = '0' and HIGH_SPEED then
                   state <= S_ChirpStart;
                 else
                   state <= S_SwitchToFS;
                 end if;
+              elsif usb_line_state = "01" and state_counter > SUSPEND_TIME then
+                state <= S_Suspend;
               elsif bus_tx_ready = '1' and axis_tx_tvalid = '1' then
                 ulpi_data_out <= "0100" & axis_tx_tdata(3 downto 0);
                 buf_valid     <= '0';
@@ -237,6 +250,7 @@ begin
               end if;
               
             when S_ChirpStart =>
+              usb_reset     <= '1';
               reg_data      <= b"0_1_0_10_1_00";
               ulpi_data_out <= X"84";
               state         <= S_WriteReg_A;
@@ -246,31 +260,25 @@ begin
               if ulpi_nxt = '1' then
                 ulpi_data_out <= X"00";
                 state <= S_ChirpK;
-                chirp_counter <= (others => '0');
               else
                 ulpi_data_out <= X"40";
               end if;
             
             when S_ChirpK =>
-              if chirp_counter > 66000 then
+              if state_counter > CHIRP_K_TIME then
                 ulpi_data_out <= X"00";
                 state         <= S_STP;
                 state_after   <= S_ChirpKJ;
-                chirp_kj_prev <= '0';
-                chirp_kj_counter <= (others => '0');
-              else
-                chirp_counter <= chirp_counter + 1;
               end if;
               
             when S_ChirpKJ =>
-              if chirp_kj_counter > 3 AND chirp_counter > 2000 then
+              if chirp_kj_counter > 3 AND state_counter > CHIRP_KJ_TIME then
                 reg_data      <= b"0_1_0_00_0_00";
                 ulpi_data_out <= X"84";
                 state         <= S_WriteReg_A;
                 state_after   <= S_Idle;
-                is_hs         <= '1';
+                hs_enabled    <= '1';
               end if;
-              chirp_counter <= chirp_counter + 1;
 
           end case;
         end if;
@@ -292,4 +300,9 @@ begin
   axis_tx_tready <= '1' when bus_tx_ready = '1' and state = S_Idle else
                     '1' when bus_tx_ready = '1' and state = S_TX and buf_valid = '0' else
                     '0';
+                    
+  usb_idle <= '1' when state = S_Idle else
+              '0';
+  usb_suspend <= '1' when state = S_Suspend else
+                 '0';
 end ulpi_port;
