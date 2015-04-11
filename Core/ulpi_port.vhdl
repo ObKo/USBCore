@@ -30,13 +30,15 @@ use IEEE.NUMERIC_STD.all;
 library work;
 use work.USBCore.all;
 
+--! ULPI PHY controller
 entity ulpi_port is
   generic (
     HIGH_SPEED: boolean := true
   );
   port (
-    rst            : in  std_logic;
+    rst            : in  std_logic;                     --! Global external asynchronous reset
 
+    --! ULPI PHY signals
     ulpi_data_in   : in  std_logic_vector(7 downto 0);
     ulpi_data_out  : out std_logic_vector(7 downto 0);
     ulpi_dir       : in  std_logic;
@@ -45,24 +47,24 @@ entity ulpi_port is
     ulpi_reset     : out std_logic;
     ulpi_clk       : in  std_logic;
 
+    --! RX AXI-Stream, first data is PID
     axis_rx_tvalid : out std_logic;
     axis_rx_tready : in  std_logic;
     axis_rx_tdata  : out std_logic_vector(7 downto 0);
-    rx_eop         : out std_logic;
+    rx_eop         : out std_logic;                     --! End-of-packet signal
 
-    -- tvalid de-assertion during tx means end of transaction
+    --! TX AXI-Stream, first data should be PID (in 4 least significant bits)
     axis_tx_tvalid : in  std_logic;
     axis_tx_tready : out std_logic;
     axis_tx_tlast  : in  std_logic;
-    -- First data is always PID (in 4 least significant bits, 0 - NOPID packet)
     axis_tx_tdata  : in  std_logic_vector(7 downto 0);
 
-    usb_rx_active  : out std_logic;
-    usb_rx_error   : out std_logic;
-    usb_vbus_valid : out std_logic;
-    usb_reset      : out std_logic;
-    usb_idle       : out std_logic;
-    usb_suspend    : out std_logic
+    usb_rx_active  : out std_logic;                     --! Packet receiving
+    usb_rx_error   : out std_logic;                     --! Packet receiving error
+    usb_vbus_valid : out std_logic;                     --! VBUS has valid voltage
+    usb_reset      : out std_logic;                     --! USB bus is in reset state
+    usb_idle       : out std_logic;                     --! USB bus is in idle state
+    usb_suspend    : out std_logic                      --! USB bus is in suspend state
   );
 end ulpi_port;
 
@@ -292,7 +294,7 @@ begin
               '1' when state = S_STP else
               '0';
 
-  ulpi_reset   <= '0';
+  ulpi_reset   <= rst;
 
   bus_tx_ready <= '1' when ulpi_dir = '0' and ulpi_dir = dir_d else
                   '0';
