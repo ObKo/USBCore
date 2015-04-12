@@ -88,6 +88,7 @@ package usbcore is
 
       axis_rx_tvalid : out std_logic;
       axis_rx_tready : in  std_logic;
+      axis_rx_tlast  : out std_logic;
       axis_rx_tdata  : out std_logic_vector(7 downto 0);
 
       axis_tx_tvalid : in  std_logic;
@@ -95,8 +96,6 @@ package usbcore is
       axis_tx_tlast  : in  std_logic;
       axis_tx_tdata  : in  std_logic_vector(7 downto 0);
       
-      usb_rx_active  : out std_logic;
-      usb_rx_error   : out std_logic;
       usb_vbus_valid : out std_logic;
       usb_reset      : out std_logic;
       usb_idle       : out std_logic;
@@ -111,15 +110,13 @@ package usbcore is
 
       axis_rx_tvalid      : in  std_logic;
       axis_rx_tready      : out std_logic;
+      axis_rx_tlast       : in  std_logic;
       axis_rx_tdata       : in  std_logic_vector(7 downto 0);
 
       axis_tx_tvalid      : out std_logic;
       axis_tx_tready      : in  std_logic;
       axis_tx_tlast       : out std_logic;
       axis_tx_tdata       : out std_logic_vector(7 downto 0);
-
-      usb_rx_active       : in  std_logic;
-      usb_rx_error        : in  std_logic;
 
       trn_type            : out std_logic_vector(1 downto 0);
       trn_address         : out std_logic_vector(6 downto 0);

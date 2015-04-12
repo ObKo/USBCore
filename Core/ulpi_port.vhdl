@@ -50,8 +50,8 @@ entity ulpi_port is
     --! RX AXI-Stream, first data is PID
     axis_rx_tvalid : out std_logic;
     axis_rx_tready : in  std_logic;
+    axis_rx_tlast  : out std_logic;
     axis_rx_tdata  : out std_logic_vector(7 downto 0);
-    rx_eop         : out std_logic;                     --! End-of-packet signal
 
     --! TX AXI-Stream, first data should be PID (in 4 least significant bits)
     axis_tx_tvalid : in  std_logic;
@@ -59,8 +59,6 @@ entity ulpi_port is
     axis_tx_tlast  : in  std_logic;
     axis_tx_tdata  : in  std_logic_vector(7 downto 0);
 
-    usb_rx_active  : out std_logic;                     --! Packet receiving
-    usb_rx_error   : out std_logic;                     --! Packet receiving error
     usb_vbus_valid : out std_logic;                     --! VBUS has valid voltage
     usb_reset      : out std_logic;                     --! USB bus is in reset state
     usb_idle       : out std_logic;                     --! USB bus is in idle state
@@ -97,15 +95,32 @@ architecture ulpi_port of ulpi_port is
   
   signal usb_line_state   : std_logic_vector(1 downto 0);
   signal state_counter    : std_logic_vector(17 downto 0);
+  
+  signal packet           : std_logic := '0';
+  signal packet_buf       : std_logic_vector(7 downto 0);
 begin
   OUTER : process(ulpi_clk) is
   begin
     if rising_edge(ulpi_clk) then
-      axis_rx_tdata <= ulpi_data_in;
       if dir_d = ulpi_dir and ulpi_dir = '1' and ulpi_nxt = '1' then
+        packet_buf <= ulpi_data_in;
+        if packet = '0' then
+          axis_rx_tvalid <= '0';
+          packet <= '1';
+        else
+          axis_rx_tdata <= packet_buf;
+          axis_rx_tvalid <= '1';          
+        end if;
+        axis_rx_tlast <= '0';
+      elsif packet = '1' and dir_d = ulpi_dir and 
+          ((ulpi_dir = '1' and ulpi_data_in(4) = '0') or (ulpi_dir = '0')) then
+        axis_rx_tdata <= packet_buf;
         axis_rx_tvalid <= '1';
+        axis_rx_tlast <= '1';
+        packet <= '0';        
       else
         axis_rx_tvalid <= '0';
+        axis_rx_tlast <= '0';
       end if;
     end if;
   end process;
@@ -138,26 +153,12 @@ begin
       
       if dir_d = ulpi_dir then
         if ulpi_dir = '1' and ulpi_nxt = '0' then
-          if ulpi_data_in(5 downto 4) = "01" then
-            usb_rx_active <= '1';
-            usb_rx_error  <= '0';
-          elsif ulpi_data_in(5 downto 4) = "11" then
-            usb_rx_active <= '1';
-            usb_rx_error  <= '1';
-          else
-            usb_rx_active <= '0';
-            usb_rx_error  <= '0';
-          end if;
-
           if ulpi_data_in(3 downto 2) = "11" then
             usb_vbus_valid <= '1';
           else
             usb_vbus_valid <= '0';
           end if;
-
         elsif ulpi_dir = '0' then
-          usb_rx_active <= '0';
-
           case state is
             when S_Init =>
               ulpi_data_out <= X"8A";
@@ -284,8 +285,6 @@ begin
 
           end case;
         end if;
-      else
-        usb_rx_active <= '0';
       end if;
     end if;
   end process;

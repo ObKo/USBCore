@@ -37,15 +37,13 @@ entity usb_packet is
 
     axis_rx_tvalid      : in  std_logic;
     axis_rx_tready      : out std_logic;
+    axis_rx_tlast       : in  std_logic;
     axis_rx_tdata       : in  std_logic_vector(7 downto 0);
 
     axis_tx_tvalid      : out std_logic;
     axis_tx_tready      : in  std_logic;
     axis_tx_tlast       : out std_logic;
     axis_tx_tdata       : out std_logic_vector(7 downto 0);
-
-    usb_rx_active       : in  std_logic;
-    usb_rx_error        : in  std_logic;
 
     trn_type            : out std_logic_vector(1 downto 0);
     trn_address         : out std_logic_vector(6 downto 0);
@@ -83,7 +81,7 @@ entity usb_packet is
 end usb_packet;
 
 architecture usb_packet of usb_packet is
-  type RX_MACHINE is (S_Idle, S_SOF, S_Token, S_Data);
+  type RX_MACHINE is (S_Idle, S_SOF, S_SOFCRC, S_Token, S_TokenCRC, S_Data, S_DataCRC);
   type TX_MACHINE is (S_Idle, S_HSK, S_HSK_Wait, S_DataPID, S_Data, S_DataCRC1, S_DataCRC2);
 
   function crc5(data : std_logic_vector) return std_logic_vector is
@@ -227,15 +225,18 @@ begin
                 token_data(10 downto 8) <= axis_rx_tdata(2 downto 0);
                 token_crc5              <= axis_rx_tdata(7 downto 3);
               end if;
-            elsif usb_rx_active = '0' or usb_rx_error = '1' then
-              if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
-                start_of_frame <= '1';
+              if axis_rx_tlast = '1' then
+                rx_state <= S_SOFCRC;
               end if;
-              if token_crc5 /= rx_crc5 then
-                crc_error <= '1';
-              end if;
-              rx_state <= S_Idle;
             end if;
+            
+          when S_SOFCRC =>
+            if token_crc5 /= rx_crc5 then
+              crc_error <= '1';
+            else
+              start_of_frame <= '1';
+            end if;
+            rx_state <= S_Idle;
 
           when S_Token =>
             if axis_rx_tvalid = '1' then
@@ -245,17 +246,20 @@ begin
                 token_data(10 downto 8) <= axis_rx_tdata(2 downto 0);
                 token_crc5              <= axis_rx_tdata(7 downto 3);
               end if;
-            elsif usb_rx_active = '0' or usb_rx_error = '1' then
-              if device_address = token_data(6 downto 0) then
-                if usb_rx_active = '0' and usb_rx_error = '0' and token_crc5 = rx_crc5 then
-                  trn_start <= '1';
-                end if;
-                if token_crc5 /= rx_crc5 then
-                  crc_error <= '1';
-                end if;
+              if axis_rx_tlast = '1' then
+                rx_state <= S_TokenCRC;
               end if;
-              rx_state <= S_Idle;
             end if;
+            
+          when S_TokenCRC =>
+            if device_address = token_data(6 downto 0) then
+              if token_crc5 = rx_crc5 then
+                trn_start <= '1';
+              else
+                crc_error <= '1';
+              end if;
+            end if;
+            rx_state <= S_Idle;
 
           when S_Data =>
             if axis_rx_tvalid = '1' then
@@ -267,13 +271,17 @@ begin
                 rx_buf1 <= rx_buf2;
                 rx_buf2 <= axis_rx_tdata;
               end if;
-            elsif usb_rx_active = '0' or usb_rx_error = '1' then
-              rx_trn_end <= '1';
-              if rx_data_crc = rx_crc16 then
-                crc_error <= '1';
+              if axis_rx_tlast = '1' then
+                rx_state <= S_DataCRC;
               end if;
-              rx_state <= S_Idle;
             end if;
+              
+          when S_DataCRC =>
+            rx_trn_end <= '1';
+            if rx_data_crc /= rx_crc16 then
+              crc_error <= '1';
+            end if;
+            rx_state <= S_Idle;
 
         end case;
       end if;

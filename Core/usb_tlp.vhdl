@@ -120,6 +120,7 @@ end usb_tlp;
 architecture usb_tlp of usb_tlp is
   signal axis_rx_tvalid              : std_logic;
   signal axis_rx_tready              : std_logic;
+  signal axis_rx_tlast               : std_logic;
   signal axis_rx_tdata               : std_logic_vector(7 downto 0);
 
   signal axis_tx_tvalid              : std_logic;
@@ -127,9 +128,6 @@ architecture usb_tlp of usb_tlp is
   signal axis_tx_tlast               : std_logic;
   signal axis_tx_tdata               : std_logic_vector(7 downto 0);
 
-  signal usb_line_state              : std_logic_vector(1 downto 0);
-  signal usb_rx_active               : std_logic;
-  signal usb_rx_error                : std_logic;
   signal usb_vbus_valid              : std_logic;
 
   signal trn_type                    : std_logic_vector(1 downto 0);
@@ -209,6 +207,7 @@ begin
 
       axis_rx_tvalid => axis_rx_tvalid,
       axis_rx_tready => axis_rx_tready,
+      axis_rx_tlast  => axis_rx_tlast,
       axis_rx_tdata  => axis_rx_tdata,
 
       axis_tx_tvalid => axis_tx_tvalid,
@@ -216,8 +215,6 @@ begin
       axis_tx_tlast  => axis_tx_tlast,
       axis_tx_tdata  => axis_tx_tdata,
 
-      usb_rx_active  => usb_rx_active,
-      usb_rx_error   => usb_rx_error,
       usb_vbus_valid => usb_vbus_valid,
       usb_reset      => usb_reset_int,
       usb_idle       => usb_idle,
@@ -231,15 +228,13 @@ begin
 
       axis_rx_tvalid      => axis_rx_tvalid,
       axis_rx_tready      => axis_rx_tready,
+      axis_rx_tlast       => axis_rx_tlast,
       axis_rx_tdata       => axis_rx_tdata,
 
       axis_tx_tvalid      => axis_tx_tvalid,
       axis_tx_tready      => axis_tx_tready,
       axis_tx_tlast       => axis_tx_tlast,
       axis_tx_tdata       => axis_tx_tdata,
-
-      usb_rx_active       => usb_rx_active,
-      usb_rx_error        => usb_rx_error,
 
       trn_type            => trn_type,
       trn_address         => trn_address,
