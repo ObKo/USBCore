@@ -70,11 +70,12 @@ architecture ulpi_port of ulpi_port is
   constant SUSPEND_TIME : integer := 190000;  -- = ~3 ms
   constant RESET_TIME   : integer := 190000;  -- = ~3 ms 
   constant CHIRP_K_TIME : integer := 66000;   -- = ~1 ms  
-  constant CHIRP_KJ_TIME: integer := 2000;    -- = ~2 us 
+  constant CHIRP_KJ_TIME: integer := 120;     -- = ~2 us 
+  constant SWITCH_TIME  : integer := 6000;    -- = ~100 us 
 
-  type MACHINE is (S_Init, S_WriteReg_A, S_WriteReg_D, S_STP, S_SwitchToFS, S_Reset, S_Suspend,
+  type MACHINE is (S_Init, S_WriteReg_A, S_WriteReg_D, S_STP, S_Reset, S_Suspend,
                    S_Idle, S_TX, S_TX_Last, S_ChirpStart, S_ChirpStartK, S_ChirpK,
-                   S_ChirpKJ);
+                   S_ChirpKJ, S_SwitchFSStart, S_SwitchFS);
 
   signal state            : MACHINE;
   signal state_after      : MACHINE;
@@ -140,6 +141,8 @@ begin
         state_counter <= (others => '0');
       elsif state = S_ChirpStartK then
         state_counter <= (others => '0');
+      elsif state = S_SwitchFSStart then
+        state_counter <= (others => '0');        
       else
         state_counter <= state_counter + 1;
       end if;
@@ -164,8 +167,8 @@ begin
               ulpi_data_out <= X"8A";
               reg_data      <= X"00";
               state         <= S_WriteReg_A;
-              state_after   <= S_SwitchToFS;
-
+              state_after   <= S_SwitchFSStart;
+              
             when S_WriteReg_A =>
               if ulpi_nxt = '1' then
                 ulpi_data_out <= reg_data;
@@ -178,17 +181,16 @@ begin
                 state         <= S_STP;
               end if;
               
-            when S_SwitchToFS =>
-              reg_data      <= b"0_1_0_00_1_01";
-              ulpi_data_out <= X"84";
-              state         <= S_WriteReg_A;
-              hs_enabled    <= '0';
-              state_after   <= S_Reset;
-              
             when S_Reset =>
               usb_reset <= '1';
-              if usb_line_state /= "00" then
-                state <= S_Idle;
+              if hs_enabled = '0' and HIGH_SPEED then
+                state <= S_ChirpStart;
+              elsif HIGH_SPEED then
+                state <= S_SwitchFSStart;
+              else
+                if usb_line_state /= "00" then
+                  state <= S_Idle;
+                end if;
               end if;
               
             when S_Suspend =>
@@ -204,12 +206,8 @@ begin
             when S_Idle =>
               usb_reset <= '0';
               if usb_line_state = "00" and state_counter > RESET_TIME then
-                if hs_enabled = '0' and HIGH_SPEED then
-                  state <= S_ChirpStart;
-                else
-                  state <= S_SwitchToFS;
-                end if;
-              elsif usb_line_state = "01" and state_counter > SUSPEND_TIME then
+                state <= S_Reset;
+              elsif hs_enabled = '0' and usb_line_state = "01" and state_counter > SUSPEND_TIME then
                 state <= S_Suspend;
               elsif bus_tx_ready = '1' and axis_tx_tvalid = '1' then
                 ulpi_data_out <= "0100" & axis_tx_tdata(3 downto 0);
@@ -253,7 +251,6 @@ begin
               end if;
               
             when S_ChirpStart =>
-              usb_reset     <= '1';
               reg_data      <= b"0_1_0_10_1_00";
               ulpi_data_out <= X"84";
               state         <= S_WriteReg_A;
@@ -281,6 +278,22 @@ begin
                 state         <= S_WriteReg_A;
                 state_after   <= S_Idle;
                 hs_enabled    <= '1';
+              end if;
+              
+            when S_SwitchFSStart =>
+              reg_data      <= b"0_1_0_00_1_01";
+              ulpi_data_out <= X"84";
+              state         <= S_WriteReg_A;
+              hs_enabled    <= '0';
+              state_after   <= S_SwitchFS;
+              
+            when S_SwitchFS =>
+              if state_counter > SWITCH_TIME then
+                if usb_line_state = "00" AND HIGH_SPEED then
+                  state <= S_ChirpStart;
+                else
+                  state <= S_Idle;
+                end if;
               end if;
 
           end case;
