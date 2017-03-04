@@ -1,9 +1,0 @@
-# Constraints for Numato Saturn - Spartan 6 FPGA Development Board with DDR SDRAM 
-#  http://numato.com/fpga-boards/xilinx/spartan6/saturn-spartan-6-fpga-development-board-with-ddr-sdram.html
-# Main constraints
-
-NET "main_clk" PERIOD = 10 ns;
-
-NET "main_clk" IOSTANDARD = LVTTL;
-
-NET "main_clk" LOC = V10;
