@@ -6,6 +6,7 @@ logic       ulpi_clk;
 logic       ulpi_rst;
 
 axi_lite_iface ulpi_csr();
+usb_state_iface usb_state();
 
 
 ulpi_controller ULPI_CTL (
@@ -14,7 +15,8 @@ ulpi_controller ULPI_CTL (
     .ulpi_clk(ulpi_clk),
     .ulpi_rst(ulpi_rst),
     
-    .ulpi_csr(ulpi_csr)
+    .ulpi_csr(ulpi_csr),
+    .usb_state(usb_state)
 );
 
 assign ulpi_rst = 1'b0;

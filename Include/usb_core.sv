@@ -100,3 +100,22 @@ interface axi_lite_iface;
               rready
     );
 endinterface
+
+interface usb_state_iface;
+    logic [1:0] line_state;
+    logic [1:0] vbus_state;
+    logic       rx_active;
+    logic       rx_error;
+    logic       host_disconnect;
+    logic       id;
+    logic       update;
+    
+    modport ctl (
+        output line_state, vbus_state, rx_active, rx_error, host_disconnect,
+               id, update
+    );
+    modport dst (
+        input  line_state, vbus_state, rx_active, rx_error, host_disconnect,
+               id, update
+    );
+endinterface

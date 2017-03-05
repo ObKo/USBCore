@@ -4,7 +4,9 @@ module ulpi_controller (
     output                  ulpi_clk,
     input                   ulpi_rst,
     
-    axi_lite_iface.slave    ulpi_csr
+    axi_lite_iface.slave    ulpi_csr,
+    
+    usb_state_iface.ctl     usb_state
 );
 
 ulpi_iface  ulpi();
@@ -51,6 +53,22 @@ assign  dbg_arvalid = ulpi_csr.arvalid;
 assign  dbg_arready = ulpi_csr.arready;
 assign  dbg_araddr  = ulpi_csr.araddr; 
 
+(* mark_debug = "true" *)logic [1:0] dbg_line_state;
+(* mark_debug = "true" *)logic [1:0] dbg_vbus_state;
+(* mark_debug = "true" *)logic       dbg_rx_active;
+(* mark_debug = "true" *)logic       dbg_rx_error;
+(* mark_debug = "true" *)logic       dbg_host_disconnect;
+(* mark_debug = "true" *)logic       dbg_id;
+(* mark_debug = "true" *)logic       dbg_update;
+
+assign dbg_line_state      = usb_state.line_state;    
+assign dbg_vbus_state      = usb_state.vbus_state;    
+assign dbg_rx_active       = usb_state.rx_active;     
+assign dbg_rx_error        = usb_state.rx_error;      
+assign dbg_host_disconnect = usb_state.host_disconnect;
+assign dbg_id              = usb_state.id;            
+assign dbg_update          = usb_state.update;        
+
 ulpi_axis_iface ulpi_rx();
 ulpi_axis_iface ulpi_tx();
 
@@ -75,6 +93,33 @@ ulpi_axis AXI (
 
 logic ulpi_is_rx;
 assign ulpi_is_rx = ulpi_rx.tvalid;
+
+logic rx_active_down;
+logic rx_active_d;
+always_ff @(posedge ulpi_clk)
+    rx_active_d <= ulpi_rx.tuser[1];
+assign rx_active_down = ~ulpi_rx.tuser[1] & rx_active_d;
+
+always_ff @(posedge ulpi_clk) begin
+    if (ulpi_rst) begin
+        usb_state.line_state <= 2'b00;
+        usb_state.vbus_state <= 2'b00;
+        usb_state.rx_error <= 1'b0;
+        usb_state.host_disconnect <= 1'b0;
+        usb_state.id <= 1'b0;        
+    end else if (ulpi_rx.tvalid & ulpi_rx.tuser[0]) begin
+        usb_state.line_state <= ulpi_rx.tdata[1:0];
+        usb_state.vbus_state <= ulpi_rx.tdata[3:2];
+        usb_state.rx_error <= (ulpi_rx.tdata[5:4] == 2'b11);
+        usb_state.host_disconnect <= (ulpi_rx.tdata[5:4] == 2'b10);
+        usb_state.id <= ulpi_rx.tdata[6];
+    end
+    if ((ulpi_rx.tvalid & ulpi_rx.tuser[0]) | rx_active_down) begin
+        usb_state.rx_active <= ulpi_rx.tuser[1];
+        usb_state.update <= 1'b1;
+    end else
+        usb_state.update <= 1'b0;
+end
 
 logic           csr_rw;
 logic [5:0]     csr_reg;
