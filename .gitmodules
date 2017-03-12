@@ -1,0 +1,6 @@
+[submodule "microblaze-cmake"]
+	path = microblaze-cmake
+	url = https://github.com/ObKo/microblaze-cmake
+[submodule "Software/microblaze-cmake"]
+	path = Software/microblaze-cmake
+	url = https://github.com/ObKo/microblaze-cmake

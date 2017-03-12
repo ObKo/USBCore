@@ -1,0 +1,10 @@
+set_property IOSTANDARD LVCMOS33 [get_ports {sys_clk}]
+set_property IOSTANDARD LVCMOS33 [get_ports {sys_rst_n}]
+set_property IOSTANDARD LVCMOS33 [get_ports {uart_rxd}]
+set_property IOSTANDARD LVCMOS33 [get_ports {uart_txd}]
+set_property PACKAGE_PIN E3 [get_ports {sys_clk}]
+set_property PACKAGE_PIN C2 [get_ports {sys_rst_n}]
+set_property PACKAGE_PIN A9 [get_ports {uart_rxd}]
+set_property PACKAGE_PIN D10 [get_ports {uart_txd}]
+
+create_clock -period 10.000 -name sys_clk [get_ports {sys_clk}] 

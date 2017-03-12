@@ -16,7 +16,7 @@
     <Option Name="CompiledLibDirVCS" Val="$PCACHEDIR/compile_simlib/vcs"/>
     <Option Name="CompiledLibDirRiviera" Val="$PCACHEDIR/compile_simlib/riviera"/>
     <Option Name="CompiledLibDirActivehdl" Val="$PCACHEDIR/compile_simlib/activehdl"/>
-    <Option Name="BoardPart" Val=""/>
+    <Option Name="BoardPart" Val="digilentinc.com:arty:part0:1.1"/>
     <Option Name="ActiveSimSet" Val="sim_1"/>
     <Option Name="DefaultLib" Val="xil_defaultlib"/>
     <Option Name="IPOutputRepo" Val="$PCACHEDIR/ip"/>
@@ -27,6 +27,7 @@
     <Option Name="IPUserFilesDir" Val="$PPRDIR/USBCore.ip_user_files"/>
     <Option Name="IPStaticSourceDir" Val="$PPRDIR/USBCore.ip_user_files/ipstatic"/>
     <Option Name="EnableBDX" Val="FALSE"/>
+    <Option Name="DSABoardId" Val="arty"/>
     <Option Name="DSANumComputeUnits" Val="16"/>
     <Option Name="WTXSimLaunchSim" Val="0"/>
     <Option Name="WTModelSimLaunchSim" Val="0"/>
@@ -35,13 +36,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="3"/>
-    <Option Name="WTModelSimExportSim" Val="3"/>
-    <Option Name="WTQuestaExportSim" Val="3"/>
-    <Option Name="WTIesExportSim" Val="3"/>
-    <Option Name="WTVcsExportSim" Val="3"/>
-    <Option Name="WTRivieraExportSim" Val="3"/>
-    <Option Name="WTActivehdlExportSim" Val="3"/>
+    <Option Name="WTXSimExportSim" Val="8"/>
+    <Option Name="WTModelSimExportSim" Val="8"/>
+    <Option Name="WTQuestaExportSim" Val="8"/>
+    <Option Name="WTIesExportSim" Val="8"/>
+    <Option Name="WTVcsExportSim" Val="8"/>
+    <Option Name="WTRivieraExportSim" Val="8"/>
+    <Option Name="WTActivehdlExportSim" Val="8"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -72,21 +73,51 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <File Path="$PPRDIR/../BlockDesign/MicroblazeSystem/MicroblazeSystem.bd">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_rst_mig_7series_0_151M_0/MicroblazeSystem_rst_mig_7series_0_151M_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_mdm_1_0/MicroblazeSystem_mdm_1_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_mdm_1_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_microblaze_0_axi_periph_0/MicroblazeSystem_microblaze_0_axi_periph_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_microblaze_0_0/MicroblazeSystem_microblaze_0_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_microblaze_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_mig_7series_0_0/MicroblazeSystem_mig_7series_0_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_mig_7series_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_microblaze_0_axi_intc_0/MicroblazeSystem_microblaze_0_axi_intc_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_microblaze_0_axi_intc_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_clk_wiz_0_0/MicroblazeSystem_clk_wiz_0_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_clk_wiz_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_lmb_bram_if_cntlr_0_0/MicroblazeSystem_lmb_bram_if_cntlr_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_blk_mem_gen_0_0/MicroblazeSystem_blk_mem_gen_0_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_blk_mem_gen_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_lmb_bram_if_cntlr_1_0/MicroblazeSystem_lmb_bram_if_cntlr_1_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_uartlite_0_0/MicroblazeSystem_axi_uartlite_0_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_axi_uartlite_0_0"/>
+        </CompFileExtendedInfo>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xbar_1/MicroblazeSystem_xbar_1.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xbar_0/MicroblazeSystem_xbar_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_mem_intercon_0/MicroblazeSystem_axi_mem_intercon_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="MicroblazeSystem.bmm"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hdl/MicroblazeSystem.v"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="MicroblazeSystem_ooc.xdc"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hdl/MicroblazeSystem.hwdef"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hw_handoff/MicroblazeSystem.hwh"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hw_handoff/MicroblazeSystem_bd.tcl"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_auto_us_df_0/MicroblazeSystem_auto_us_df_0.xci">
+          <Proxy FileSetName="MicroblazeSystem_auto_us_df_0"/>
+        </CompFileExtendedInfo>
+      </File>
       <File Path="$PPRDIR/../ULPI/ulpi_controller.sv">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <File Path="$PPRDIR/../Examples/ArtyDebug/jtag_axi.xcix">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="simulation"/>
-        </FileInfo>
-      </File>
-      <File Path="$PPRDIR/../Examples/ArtyDebug/jtag_axi/jtag_axi.xci">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -100,6 +131,21 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <File Path="$PPRDIR/../BlockDesign/MicroblazeSystem/ip/MicroblazeSystem_mig_7series_0_0/board.prj">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../BlockDesign/MicroblazeSystem/ip/MicroblazeSystem_mig_7series_0_0/mig_a.prj">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../BlockDesign/MicroblazeSystem/ip/MicroblazeSystem_mig_7series_0_0/mig_b.prj">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+        </FileInfo>
+      </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
         <Option Name="TopModule" Val="arty_debug"/>
@@ -108,6 +154,12 @@
     </FileSet>
     <FileSet Name="constrs_1" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1">
       <Filter Type="Constrs"/>
+      <File Path="$PPRDIR/../Constraints/Arty/system.xdc">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+        </FileInfo>
+      </File>
       <File Path="$PPRDIR/../Constraints/Arty/ulpi_pmod.xdc">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -135,6 +187,54 @@
         <Option Name="TransportPathDelay" Val="0"/>
         <Option Name="TransportIntDelay" Val="0"/>
         <Option Name="SrcSet" Val="sources_1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_mdm_1_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_mdm_1_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_mdm_1_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_microblaze_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_microblaze_0_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_microblaze_0_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_mig_7series_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_mig_7series_0_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_mig_7series_0_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_microblaze_0_axi_intc_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_microblaze_0_axi_intc_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_microblaze_0_axi_intc_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_clk_wiz_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_clk_wiz_0_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_clk_wiz_0_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_blk_mem_gen_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_blk_mem_gen_0_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_blk_mem_gen_0_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_axi_uartlite_0_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_axi_uartlite_0_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_axi_uartlite_0_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
+      </Config>
+    </FileSet>
+    <FileSet Name="MicroblazeSystem_auto_us_df_0" Type="BlockSrcs" RelSrcDir="$PSRCDIR/MicroblazeSystem_auto_us_df_0">
+      <Config>
+        <Option Name="TopModule" Val="MicroblazeSystem_auto_us_df_0"/>
+        <Option Name="UseBlackboxStub" Val="1"/>
       </Config>
     </FileSet>
   </FileSets>
@@ -168,6 +268,86 @@
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
     </Run>
+    <Run Id="MicroblazeSystem_mdm_1_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_mdm_1_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_mdm_1_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_mdm_1_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_microblaze_0_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_microblaze_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_microblaze_0_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_microblaze_0_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_mig_7series_0_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_mig_7series_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_mig_7series_0_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_mig_7series_0_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_microblaze_0_axi_intc_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_microblaze_0_axi_intc_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_microblaze_0_axi_intc_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_microblaze_0_axi_intc_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_clk_wiz_0_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_clk_wiz_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_clk_wiz_0_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_clk_wiz_0_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_blk_mem_gen_0_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_blk_mem_gen_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_blk_mem_gen_0_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_blk_mem_gen_0_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_axi_uartlite_0_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_axi_uartlite_0_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_axi_uartlite_0_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_axi_uartlite_0_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_auto_us_df_0_synth_1" Type="Ft3:Synth" SrcSet="MicroblazeSystem_auto_us_df_0" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_auto_us_df_0" Description="Vivado Synthesis Defaults" Dir="$PRUNDIR/MicroblazeSystem_auto_us_df_0_synth_1" IncludeInArchive="true">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2016">
+          <Desc>Vivado Synthesis Defaults</Desc>
+        </StratHandle>
+        <Step Id="synth_design"/>
+      </Strategy>
+      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
     <Run Id="impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="constrs_1" Description="Uses multiple algorithms for optimization, placement, and routing to get potentially better results." State="current" Dir="$PRUNDIR/impl_1" SynthRun="synth_1" IncludeInArchive="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Performance_Explore" Flow="Vivado Implementation 2016"/>
@@ -192,5 +372,169 @@
       <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
     </Run>
+    <Run Id="MicroblazeSystem_mdm_1_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_mdm_1_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_mdm_1_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_microblaze_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_microblaze_0_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_microblaze_0_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_mig_7series_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_mig_7series_0_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_mig_7series_0_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_microblaze_0_axi_intc_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_microblaze_0_axi_intc_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_microblaze_0_axi_intc_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_clk_wiz_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_clk_wiz_0_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_clk_wiz_0_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_blk_mem_gen_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_blk_mem_gen_0_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_blk_mem_gen_0_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_axi_uartlite_0_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_axi_uartlite_0_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_axi_uartlite_0_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
+    <Run Id="MicroblazeSystem_auto_us_df_0_impl_1" Type="Ft2:EntireDesign" Part="xc7a35ticsg324-1L" ConstrsSet="MicroblazeSystem_auto_us_df_0" Description="Default settings for Implementation." SynthRun="MicroblazeSystem_auto_us_df_0_synth_1" IncludeInArchive="false">
+      <Strategy Version="1" Minor="2">
+        <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2016">
+          <Desc>Default settings for Implementation.</Desc>
+        </StratHandle>
+        <Step Id="init_design"/>
+        <Step Id="opt_design"/>
+        <Step Id="power_opt_design"/>
+        <Step Id="place_design"/>
+        <Step Id="post_place_power_opt_design"/>
+        <Step Id="phys_opt_design"/>
+        <Step Id="route_design"/>
+        <Step Id="post_route_phys_opt_design"/>
+        <Step Id="write_bitstream"/>
+      </Strategy>
+      <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
+    </Run>
   </Runs>
+  <MsgRule>
+    <MsgAttr Name="RuleType" Val="0"/>
+    <MsgAttr Name="Limit" Val="-1"/>
+    <MsgAttr Name="NewSeverity" Val="ANY"/>
+    <MsgAttr Name="Id" Val="[BD 41-1306]"/>
+    <MsgAttr Name="Severity" Val="ANY"/>
+    <MsgAttr Name="ShowRule" Val="1"/>
+    <MsgAttr Name="RuleSource" Val="2"/>
+    <MsgAttr Name="StringIsRegExp" Val="0"/>
+    <MsgAttr Name="RuleId" Val="7"/>
+    <MsgAttr Name="Note" Val=""/>
+    <MsgAttr Name="Author" Val=""/>
+    <MsgAttr Name="CreatedTimestamp" Val=""/>
+  </MsgRule>
+  <MsgRule>
+    <MsgAttr Name="RuleType" Val="0"/>
+    <MsgAttr Name="Limit" Val="-1"/>
+    <MsgAttr Name="NewSeverity" Val="ANY"/>
+    <MsgAttr Name="Id" Val="[BD 41-1271]"/>
+    <MsgAttr Name="Severity" Val="ANY"/>
+    <MsgAttr Name="ShowRule" Val="1"/>
+    <MsgAttr Name="RuleSource" Val="2"/>
+    <MsgAttr Name="StringIsRegExp" Val="0"/>
+    <MsgAttr Name="RuleId" Val="8"/>
+    <MsgAttr Name="Note" Val=""/>
+    <MsgAttr Name="Author" Val=""/>
+    <MsgAttr Name="CreatedTimestamp" Val=""/>
+  </MsgRule>
 </Project>
