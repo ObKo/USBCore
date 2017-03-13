@@ -1,12 +1,12 @@
 _STACK_SIZE = DEFINED(_STACK_SIZE) ? _STACK_SIZE : 0x1000;
-_HEAP_SIZE = DEFINED(_HEAP_SIZE) ? _HEAP_SIZE : 0x800;
+_HEAP_SIZE = DEFINED(_HEAP_SIZE) ? _HEAP_SIZE : 0x08000000;
 
 /* Define Memories in the system */
 
 MEMORY
 {
-   CCRAM : ORIGIN = 0x00000050, LENGTH = 0x00007FB0
-   RAM :   ORIGIN = 0x20000000, LENGTH = 0x10000000
+   CCRAM : ORIGIN = 0x50, LENGTH = 0x7FB0
+   RAM : ORIGIN = 0x80000000, LENGTH = 0x10000000
 }
 
 /* Specify the default entry point to the program */
@@ -198,4 +198,3 @@ _SDA2_BASE_ = __sdata2_start + ((__sbss2_end - __sdata2_start) / 2 );
 
 _end = .;
 }
-

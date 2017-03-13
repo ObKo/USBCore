@@ -5,6 +5,9 @@ module arty_debug (
     input           uart_rxd,
     output          uart_txd,
     
+    inout [3:0]     qspi_dq,
+    inout           qspi_cs,
+    
     output [13:0]   ddr3_addr,
     output [2:0]    ddr3_ba,
     output          ddr3_cas_n,
@@ -87,6 +90,22 @@ logic [0:0]     s_axi_mem_wready;
 logic [3:0]     s_axi_mem_wstrb;
 logic [0:0]     s_axi_mem_wvalid;
 
+logic spi_io0_i;
+logic spi_io0_o;
+logic spi_io0_t;
+logic spi_io1_i;
+logic spi_io1_o;
+logic spi_io1_t;
+logic spi_io2_i;
+logic spi_io2_o;
+logic spi_io2_t;
+logic spi_io3_i;
+logic spi_io3_o;
+logic spi_io3_t;
+logic spi_ss_i;
+logic spi_ss_o;
+logic spi_ss_t;
+
 MicroblazeSystem SYSTEM
 (
     .sys_clk(sys_clk),
@@ -116,6 +135,23 @@ MicroblazeSystem SYSTEM
         
     .uart_rxd(uart_rxd),
     .uart_txd(uart_txd),
+    
+    
+    .spi_io0_i(spi_io0_i),
+    .spi_io0_o(spi_io0_o),
+    .spi_io0_t(spi_io0_t),
+    .spi_io1_i(spi_io1_i),
+    .spi_io1_o(spi_io1_o),
+    .spi_io1_t(spi_io1_t),
+    .spi_io2_i(spi_io2_i),
+    .spi_io2_o(spi_io2_o),
+    .spi_io2_t(spi_io2_t),
+    .spi_io3_i(spi_io3_i),
+    .spi_io3_o(spi_io3_o),
+    .spi_io3_t(spi_io3_t),
+    .spi_ss_i(spi_ss_i_0),
+    .spi_ss_o(spi_ss_o_0),
+    .spi_ss_t(spi_ss_t),
     
         
     .m_axi_reg_araddr(m_axi_reg_araddr),
@@ -185,6 +221,12 @@ MicroblazeSystem SYSTEM
     .s_axi_mem_wstrb(s_axi_mem_wstrb),
     .s_axi_mem_wvalid(s_axi_mem_wvalid)
 );
+
+IOBUF spi_dq0_iobuf (.I(spi_io0_o), .IO(qspi_dq[0]), .O(spi_io0_i), .T(spi_io0_t));
+IOBUF spi_dq1_iobuf (.I(spi_io1_o), .IO(qspi_dq[1]), .O(spi_io1_i), .T(spi_io1_t));
+IOBUF spi_dq2_iobuf (.I(spi_io2_o), .IO(qspi_dq[2]), .O(spi_io2_i), .T(spi_io2_t));
+IOBUF spi_dq3_iobuf (.I(spi_io3_o), .IO(qspi_dq[3]), .O(spi_io3_i), .T(spi_io3_t));
+IOBUF spi_cs_iobuf  (.I(spi_ss_o_0), .IO(qspi_cs),   .O(spi_ss_i_0), .T(spi_ss_t));
 
 /*assign m_axi_reg_arvalid = 1'b0;
 assign m_axi_reg_awvalid = 1'b0;
