@@ -508,7 +508,7 @@
             <spirit:value>0</spirit:value>
             <spirit:vendorExtensions>
               <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="ip_prop"/>
+                <bd:configElementInfo bd:valueSource="default_prop"/>
               </bd:configElementInfos>
             </spirit:vendorExtensions>
           </spirit:parameter>
@@ -517,7 +517,7 @@
             <spirit:value>0</spirit:value>
             <spirit:vendorExtensions>
               <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="ip_prop"/>
+                <bd:configElementInfo bd:valueSource="default_prop"/>
               </bd:configElementInfos>
             </spirit:vendorExtensions>
           </spirit:parameter>
@@ -535,7 +535,7 @@
             <spirit:value>0</spirit:value>
             <spirit:vendorExtensions>
               <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="ip_prop"/>
+                <bd:configElementInfo bd:valueSource="default_prop"/>
               </bd:configElementInfos>
             </spirit:vendorExtensions>
           </spirit:parameter>
@@ -544,7 +544,7 @@
             <spirit:value>0</spirit:value>
             <spirit:vendorExtensions>
               <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="ip_prop"/>
+                <bd:configElementInfo bd:valueSource="default_prop"/>
               </bd:configElementInfos>
             </spirit:vendorExtensions>
           </spirit:parameter>
@@ -553,7 +553,7 @@
             <spirit:value>0</spirit:value>
             <spirit:vendorExtensions>
               <bd:configElementInfos>
-                <bd:configElementInfo bd:valueSource="ip_prop"/>
+                <bd:configElementInfo bd:valueSource="default_prop"/>
               </bd:configElementInfos>
             </spirit:vendorExtensions>
           </spirit:parameter>
@@ -1042,6 +1042,7 @@
         <spirit:componentRef spirit:library="ip" spirit:name="axi_uartlite" spirit:vendor="xilinx.com" spirit:version="2.0"/>
         <spirit:configurableElementValues>
           <spirit:configurableElementValue spirit:referenceId="bd:xciName">MicroblazeSystem_axi_uartlite_0_0</spirit:configurableElementValue>
+          <spirit:configurableElementValue spirit:referenceId="C_BAUDRATE">115200</spirit:configurableElementValue>
         </spirit:configurableElementValues>
       </spirit:componentInstance>
       <spirit:componentInstance>
@@ -1184,28 +1185,28 @@
       <spirit:adHocConnection>
         <spirit:name>RAM_ui_clk</spirit:name>
         <spirit:internalPortReference spirit:componentRef="RAM" spirit:portRef="ui_clk"/>
+        <spirit:externalPortReference spirit:portRef="axi_aclk"/>
         <spirit:internalPortReference spirit:componentRef="CPU" spirit:portRef="Clk"/>
         <spirit:internalPortReference spirit:componentRef="RESET" spirit:portRef="slowest_sync_clk"/>
         <spirit:internalPortReference spirit:componentRef="ILMB" spirit:portRef="LMB_Clk"/>
         <spirit:internalPortReference spirit:componentRef="DLMB" spirit:portRef="LMB_Clk"/>
+        <spirit:internalPortReference spirit:componentRef="UART" spirit:portRef="s_axi_aclk"/>
+        <spirit:internalPortReference spirit:componentRef="SYS_TIM" spirit:portRef="s_axi_aclk"/>
+        <spirit:internalPortReference spirit:componentRef="IRQ" spirit:portRef="s_axi_aclk"/>
+        <spirit:internalPortReference spirit:componentRef="SPI" spirit:portRef="s_axi_aclk"/>
+        <spirit:internalPortReference spirit:componentRef="SPI" spirit:portRef="ext_spi_clk"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="ACLK"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="S00_ACLK"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="M00_ACLK"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="S01_ACLK"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="S02_ACLK"/>
-        <spirit:externalPortReference spirit:portRef="axi_aclk"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="ACLK"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="S00_ACLK"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M00_ACLK"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M01_ACLK"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M02_ACLK"/>
-        <spirit:internalPortReference spirit:componentRef="UART" spirit:portRef="s_axi_aclk"/>
-        <spirit:internalPortReference spirit:componentRef="SYS_TIM" spirit:portRef="s_axi_aclk"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M03_ACLK"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M04_ACLK"/>
-        <spirit:internalPortReference spirit:componentRef="IRQ" spirit:portRef="s_axi_aclk"/>
-        <spirit:internalPortReference spirit:componentRef="SPI" spirit:portRef="s_axi_aclk"/>
-        <spirit:internalPortReference spirit:componentRef="SPI" spirit:portRef="ext_spi_clk"/>
       </spirit:adHocConnection>
       <spirit:adHocConnection>
         <spirit:name>RAM_ui_clk_sync_rst</spirit:name>
@@ -1236,28 +1237,28 @@
       <spirit:adHocConnection>
         <spirit:name>RESET_interconnect_aresetn</spirit:name>
         <spirit:internalPortReference spirit:componentRef="RESET" spirit:portRef="interconnect_aresetn"/>
+        <spirit:externalPortReference spirit:portRef="axi_aresetn"/>
+        <spirit:internalPortReference spirit:componentRef="RAM" spirit:portRef="aresetn"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="S02_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="S01_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="M00_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="S00_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="MEMORY_IC" spirit:portRef="ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="RAM" spirit:portRef="aresetn"/>
-        <spirit:externalPortReference spirit:portRef="axi_aresetn"/>
       </spirit:adHocConnection>
       <spirit:adHocConnection>
         <spirit:name>RESET_peripheral_aresetn</spirit:name>
         <spirit:internalPortReference spirit:componentRef="RESET" spirit:portRef="peripheral_aresetn"/>
+        <spirit:internalPortReference spirit:componentRef="UART" spirit:portRef="s_axi_aresetn"/>
+        <spirit:internalPortReference spirit:componentRef="SYS_TIM" spirit:portRef="s_axi_aresetn"/>
+        <spirit:internalPortReference spirit:componentRef="SPI" spirit:portRef="s_axi_aresetn"/>
+        <spirit:internalPortReference spirit:componentRef="IRQ" spirit:portRef="s_axi_aresetn"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M02_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M01_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M00_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="S00_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="UART" spirit:portRef="s_axi_aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="SYS_TIM" spirit:portRef="s_axi_aresetn"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M03_ARESETN"/>
         <spirit:internalPortReference spirit:componentRef="PERIPH_IC" spirit:portRef="M04_ARESETN"/>
-        <spirit:internalPortReference spirit:componentRef="SPI" spirit:portRef="s_axi_aresetn"/>
-        <spirit:internalPortReference spirit:componentRef="IRQ" spirit:portRef="s_axi_aresetn"/>
       </spirit:adHocConnection>
       <spirit:adHocConnection>
         <spirit:name>IRQ_CONCAT_dout</spirit:name>
