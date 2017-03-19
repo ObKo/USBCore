@@ -973,6 +973,9 @@
         <spirit:configurableElementValues>
           <spirit:configurableElementValue spirit:referenceId="bd:xciName">MicroblazeSystem_microblaze_0_0</spirit:configurableElementValue>
           <spirit:configurableElementValue spirit:referenceId="C_D_AXI">1</spirit:configurableElementValue>
+          <spirit:configurableElementValue spirit:referenceId="C_USE_BARREL">0</spirit:configurableElementValue>
+          <spirit:configurableElementValue spirit:referenceId="C_USE_HW_MUL">1</spirit:configurableElementValue>
+          <spirit:configurableElementValue spirit:referenceId="C_USE_FPU">2</spirit:configurableElementValue>
           <spirit:configurableElementValue spirit:referenceId="C_NUMBER_OF_PC_BRK">4</spirit:configurableElementValue>
           <spirit:configurableElementValue spirit:referenceId="C_USE_ICACHE">1</spirit:configurableElementValue>
           <spirit:configurableElementValue spirit:referenceId="C_CACHE_BYTE_SIZE">8192</spirit:configurableElementValue>

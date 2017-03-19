@@ -22,6 +22,8 @@ int main()
     {
         print("USBCore> ");
         char **t = consoleGetCommand(&con);
+        char *t1 = t[0];
+        char *t2 = *t;
         while (*t)
         {
             print(*t); print(";");
