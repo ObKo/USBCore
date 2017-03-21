@@ -984,7 +984,6 @@
           <spirit:configurableElementValue spirit:referenceId="C_DCACHE_BYTE_SIZE">8192</spirit:configurableElementValue>
           <spirit:configurableElementValue spirit:referenceId="C_DCACHE_LINE_LEN">8</spirit:configurableElementValue>
         </spirit:configurableElementValues>
-        <bd:hdl_attributes/>
       </spirit:componentInstance>
       <spirit:componentInstance>
         <spirit:instanceName>RESET</spirit:instanceName>
@@ -1006,7 +1005,6 @@
         <spirit:configurableElementValues>
           <spirit:configurableElementValue spirit:referenceId="bd:xciName">MicroblazeSystem_lmb_bram_if_cntlr_0_0</spirit:configurableElementValue>
         </spirit:configurableElementValues>
-        <bd:hdl_attributes/>
       </spirit:componentInstance>
       <spirit:componentInstance>
         <spirit:instanceName>ILMB</spirit:instanceName>
@@ -4322,7 +4320,7 @@
             <spirit:name>SEG_ILMB_Mem</spirit:name>
             <spirit:displayName>/ILMB/SLMB/Mem</spirit:displayName>
             <spirit:addressOffset>0x00000000</spirit:addressOffset>
-            <spirit:range>32K</spirit:range>
+            <spirit:range>64K</spirit:range>
           </spirit:segment>
           <spirit:segment>
             <spirit:name>SEG_RAM_memaddr</spirit:name>

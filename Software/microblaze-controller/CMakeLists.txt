@@ -1,6 +1,10 @@
-SET(MICROBLAZE_BSP_ROOT ${CMAKE_SOURCE_DIR}/../arty_debug_bsp/CPU)
-SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/../microblaze-cmake/cmake)
-SET(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/../microblaze-cmake/cmake/gcc_microblaze.cmake)
+SET(MICROBLAZE_USE_FPU  YES)
+SET(MICROBLAZE_FPU_TYPE EXTENDED)
+SET(MICROBLAZE_USE_MUL  YES)
+
+SET(MICROBLAZE_BSP_ROOT     ${CMAKE_SOURCE_DIR}/../arty_debug_bsp/CPU)
+SET(CMAKE_MODULE_PATH       ${CMAKE_SOURCE_DIR}/../microblaze-cmake/cmake)
+SET(CMAKE_TOOLCHAIN_FILE    ${CMAKE_SOURCE_DIR}/../microblaze-cmake/cmake/gcc_microblaze.cmake)
 
 PROJECT(microblaze-controller)
 

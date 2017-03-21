@@ -1,18 +1,17 @@
 #include "console.h"
 
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include <ctype.h>
 #include <stdint.h>
 
 extern char inbyte(void);
 extern void outbyte (char c);
 
-void parseLine(char *line, char *buffer, size_t bufLen, char *(*(*tokens)), size_t maxTokens)
+int parseLine(char *line, char *buffer, size_t bufLen, char *(*tokens)[], size_t maxTokens)
 {
-    int bufI = 0;
+    int bufI = 0, tI = 0;
     char *ptr = line;
-    char** tokenPtr = *tokens;
 
     while (*ptr != '\0')
     {
@@ -31,13 +30,15 @@ void parseLine(char *line, char *buffer, size_t bufLen, char *(*(*tokens)), size
         buffer[bufI] = '\0';
         bufI++;
 
-        if (tokenPtr < *tokens + maxTokens - 1)
+        if (tI < maxTokens)
         {
-            *tokenPtr = buffer + start;
-            tokenPtr++;
+            (*tokens)[tI] = buffer + start;
+            tI++;
         }
     }
-    *tokenPtr = NULL;
+    (*tokens)[tI] = NULL;
+
+    return tI;
 }
 
 static void getLine(char *line, size_t length)
@@ -75,28 +76,59 @@ static void getLine(char *line, size_t length)
     outbyte('\n');
     line[i - 1] = '\0';
 }
-#define CONSOLE_MAX_LINE_SIZE   1024
-#define CONSOLE_MAX_TOKENS      32
 
-void consoleInit(struct Console *cp)
+void consoleInit(struct Console *cp, struct ConsoleCommand *commands)
 {
     cp->lineBuffer = malloc(CONSOLE_MAX_LINE_SIZE);
     cp->parserBuffer = malloc(CONSOLE_MAX_LINE_SIZE + CONSOLE_MAX_TOKENS);
-    cp->tokens = malloc(CONSOLE_MAX_TOKENS * sizeof(char*));
-
+    cp->commands = commands;
 }
 
-char **consoleGetCommand(struct Console *cp)
+int consoleGetCommand(struct Console *cp)
 {
     getLine(cp->lineBuffer, CONSOLE_MAX_LINE_SIZE);
-    parseLine(cp->lineBuffer, cp->parserBuffer, CONSOLE_MAX_LINE_SIZE + CONSOLE_MAX_TOKENS,
-              &cp->tokens, CONSOLE_MAX_TOKENS);
-    return cp->tokens;
+    return parseLine(cp->lineBuffer, cp->parserBuffer, CONSOLE_MAX_LINE_SIZE + CONSOLE_MAX_TOKENS,
+                     &cp->argv, CONSOLE_MAX_TOKENS);
+}
+
+void consoleInteract(struct Console *cp)
+{
+    for(;;)
+    {
+        print("USBCore> ");
+        int argc = consoleGetCommand(cp);
+
+        if (argc < 1)
+            continue;
+
+        if (!strcmp(cp->argv[0], "exit"))
+        {
+            print("Goodbye!\r\n");
+            break;
+        }
+
+        if (!cp->commands)
+            continue;
+
+        struct ConsoleCommand *cmd = cp->commands;
+
+        while (cmd->cmd && cmd->func)
+        {
+            if (!strcmp(cp->argv[0], cmd->cmd))
+            {
+                cmd->func(argc, cp->argv);
+                break;
+            }
+        }
+        if (!cmd->cmd || !cmd->func)
+        {
+            print("Unknown command: "); print(cp->argv[0]); print("\r\n");
+        }
+    }
 }
 
 void consoleFree(struct Console *cp)
 {
     free(cp->lineBuffer);
     free(cp->parserBuffer);
-    free(cp->tokens);
 }
