@@ -55,6 +55,22 @@ interface ulpi_axis_iface;
     );
 endinterface
 
+interface axi_stream_iface;
+    logic       tvalid;
+    logic       tready;
+    logic [7:0] tdata;
+    logic       tlast;
+        
+    modport master (
+        input  tready,
+        output tvalid, tdata, tlast
+    );
+    modport slave (
+        output tready,
+        input  tvalid, tdata, tlast
+    );
+endinterface
+
 interface axi_lite_iface;
     logic           awvalid;
     logic           awready;
@@ -101,7 +117,7 @@ interface axi_lite_iface;
     );
 endinterface
 
-interface usb_state_iface;
+interface ulpi_state_iface;
     logic [1:0] line_state;
     logic [1:0] vbus_state;
     logic       rx_active;
@@ -117,5 +133,16 @@ interface usb_state_iface;
     modport dst (
         input  line_state, vbus_state, rx_active, rx_error, host_disconnect,
                id, update
+    );
+endinterface
+
+interface usb_control_iface;
+    logic       connected;
+    
+    modport src (
+        output connected
+    );
+    modport dst (
+        input  connected
     );
 endinterface

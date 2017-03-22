@@ -1,57 +1,32 @@
 module ulpi_controller (
-    ulpi_phy_iface.io       ulpi_phy,
+    ulpi_phy_iface.io           ulpi_phy,
     
-    output                  ulpi_clk,
-    input                   ulpi_rst,
+    output                      ulpi_clk,
+    input                       ulpi_rst,
     
-    axi_lite_iface.slave    ulpi_csr,
+    axi_lite_iface.slave        ulpi_csr,
     
-    usb_state_iface.ctl     usb_state
+    ulpi_state_iface.ctl        usb_state,
+    axi_stream_iface.master     rx,
+    axi_stream_iface.slave      tx
 );
 
 ulpi_iface  ulpi();
 
-(* mark_debug = "true" *)logic       dbg_dir;
-(* mark_debug = "true" *)logic       dbg_nxt;
-(* mark_debug = "true" *)logic       dbg_stp;
-(* mark_debug = "true" *)logic [7:0] dbg_tx_data;
-(* mark_debug = "true" *)logic [7:0] dbg_rx_data;
+ulpi_axis_iface ulpi_rx();
+ulpi_axis_iface ulpi_tx();
 
-assign dbg_dir     = ulpi.dir;
-assign dbg_nxt     = ulpi.nxt;
-assign dbg_stp     = ulpi.stp;
-assign dbg_tx_data = ulpi.tx_data;
-assign dbg_rx_data = ulpi.rx_data;
+//(* mark_debug = "true" *)logic       dbg_dir;
+//(* mark_debug = "true" *)logic       dbg_nxt;
+//(* mark_debug = "true" *)logic       dbg_stp;
+//(* mark_debug = "true" *)logic [7:0] dbg_tx_data;
+//(* mark_debug = "true" *)logic [7:0] dbg_rx_data;
 
-(* mark_debug = "true" *)logic           dbg_awvalid;
-(* mark_debug = "true" *)logic           dbg_awready;
-(* mark_debug = "true" *)logic [5:0]     dbg_awaddr;
-(* mark_debug = "true" *)logic           dbg_wvalid;
-(* mark_debug = "true" *)logic           dbg_wready;
-(* mark_debug = "true" *)logic [7:0]     dbg_wdata;
-(* mark_debug = "true" *)logic           dbg_bvalid;
-(* mark_debug = "true" *)logic           dbg_bready;
-(* mark_debug = "true" *)logic           dbg_rvalid;
-(* mark_debug = "true" *)logic           dbg_rready;
-(* mark_debug = "true" *)logic [7:0]     dbg_rdata;
-(* mark_debug = "true" *)logic           dbg_arvalid;
-(* mark_debug = "true" *)logic           dbg_arready;
-(* mark_debug = "true" *)logic [5:0]     dbg_araddr;
-
-assign  dbg_awvalid = ulpi_csr.awvalid;
-assign  dbg_awready = ulpi_csr.awready;
-assign  dbg_awaddr  = ulpi_csr.awaddr; 
-assign  dbg_wvalid  = ulpi_csr.wvalid; 
-assign  dbg_wready  = ulpi_csr.wready; 
-assign  dbg_wdata   = ulpi_csr.wdata;  
-assign  dbg_bvalid  = ulpi_csr.bvalid; 
-assign  dbg_bready  = ulpi_csr.bready; 
-assign  dbg_rvalid  = ulpi_csr.rvalid; 
-assign  dbg_rready  = ulpi_csr.rready; 
-assign  dbg_rdata   = ulpi_csr.rdata;  
-assign  dbg_arvalid = ulpi_csr.arvalid;
-assign  dbg_arready = ulpi_csr.arready;
-assign  dbg_araddr  = ulpi_csr.araddr; 
+//assign dbg_dir     = ulpi.dir;
+//assign dbg_nxt     = ulpi.nxt;
+//assign dbg_stp     = ulpi.stp;
+//assign dbg_tx_data = ulpi.tx_data;
+//assign dbg_rx_data = ulpi.rx_data;
 
 (* mark_debug = "true" *)logic [1:0] dbg_line_state;
 (* mark_debug = "true" *)logic [1:0] dbg_vbus_state;
@@ -67,10 +42,7 @@ assign dbg_rx_active       = usb_state.rx_active;
 assign dbg_rx_error        = usb_state.rx_error;      
 assign dbg_host_disconnect = usb_state.host_disconnect;
 assign dbg_id              = usb_state.id;            
-assign dbg_update          = usb_state.update;        
-
-ulpi_axis_iface ulpi_rx();
-ulpi_axis_iface ulpi_tx();
+assign dbg_update          = usb_state.update;
 
 ulpi_io IO (
     .phy(ulpi_phy),
@@ -210,5 +182,29 @@ assign ulpi_tx.tdata = (state == S_WRITE_ADDR) ? {1'b1, ~csr_rw, csr_reg} : csr_
 assign ulpi_tx.tlast = (state == S_WRITE_DATA);
 
 assign ulpi_rx.tready = 1'b1; // (state == S_READ_DATA)
+
+logic [7:0] rx_reg;
+logic       rx_reg_ce;
+logic       rx_reg_valid;
+logic       rx_reg_last;
+
+assign rx_reg_ce = ulpi_rx.tvalid & (ulpi_rx.tuser == 2'b10);
+assign rx_reg_last = ~ulpi_rx.tuser[1];
+
+always_ff @(posedge ulpi_clk)
+    if (rx_reg_ce)
+        rx_reg <= ulpi_rx.tdata;
+        
+always_ff @(posedge ulpi_clk)
+    if (ulpi_rst)
+        rx_reg_valid <= 1'b0;
+    else if (~rx_reg_valid & rx_reg_ce)
+        rx_reg_valid <= 1'b1;
+    else if (rx_reg_valid & rx_reg_last)
+        rx_reg_valid <= 1'b0;
+
+assign rx.tdata = rx_reg;
+assign rx.tvalid = rx_reg_valid & (rx_reg_ce | rx_reg_last);
+assign rx.tlast = rx_reg_valid & rx_reg_last;
 
 endmodule

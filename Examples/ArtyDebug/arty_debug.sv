@@ -228,14 +228,12 @@ IOBUF spi_dq2_iobuf (.I(spi_io2_o), .IO(qspi_dq[2]), .O(spi_io2_i), .T(spi_io2_t
 IOBUF spi_dq3_iobuf (.I(spi_io3_o), .IO(qspi_dq[3]), .O(spi_io3_i), .T(spi_io3_t));
 IOBUF spi_cs_iobuf  (.I(spi_ss_o_0), .IO(qspi_cs),   .O(spi_ss_i_0), .T(spi_ss_t));
 
-/*assign m_axi_reg_arvalid = 1'b0;
-assign m_axi_reg_awvalid = 1'b0;
-assign m_axi_reg_bready = 1'b0;
-assign m_axi_reg_rready = 1'b0;
-assign m_axi_reg_wvalid = 1'b0;*/
+usb_control_iface   usb_ctl();
+axi_stream_iface    rx();
+axi_stream_iface    tx();
 
 axi_lite_iface ulpi_csr();
-usb_state_iface usb_state();
+ulpi_state_iface ulpi_state();
 
 ulpi_controller ULPI_CTL (
     .ulpi_phy(phy),
@@ -244,8 +242,46 @@ ulpi_controller ULPI_CTL (
     .ulpi_rst(ulpi_rst),
     
     .ulpi_csr(ulpi_csr),
-    .usb_state(usb_state)
+    .usb_state(ulpi_state),
+        
+    .rx(rx),
+    .tx(tx)
 );
+
+usb_state_controller (
+    .clk(ulpi_clk),
+    .rst(ulpi_rst),
+    
+    .control(usb_ctl),
+    
+    .ulpi_state(ulpi_state),
+    .ulpi_csr(ulpi_csr)
+);
+
+arty_debug_vio VIO (
+    .clk(ulpi_clk),
+    .probe_out0(usb_ctl.connected)
+);
+
+(* mark_debug = "true" *)logic       dbg_rx_tvalid;
+(* mark_debug = "true" *)logic       dbg_rx_tready;
+(* mark_debug = "true" *)logic [7:0] dbg_rx_tdata;
+(* mark_debug = "true" *)logic       dbg_rx_tlast;
+
+(* mark_debug = "true" *)logic       dbg_tx_tvalid;
+(* mark_debug = "true" *)logic       dbg_tx_tready;
+(* mark_debug = "true" *)logic [7:0] dbg_tx_tdata;
+(* mark_debug = "true" *)logic       dbg_tx_tlast;
+
+assign dbg_rx_tvalid = rx.tvalid;
+assign dbg_rx_tready = rx.tready;
+assign dbg_rx_tdata  = rx.tdata;
+assign dbg_rx_tlast  = rx.tlast;
+
+assign dbg_tx_tvalid = tx.tvalid;
+assign dbg_tx_tready = tx.tready;
+assign dbg_tx_tdata  = tx.tdata;
+assign dbg_tx_tlast  = tx.tlast;
 
 assign ulpi_rst = 1'b0;
 

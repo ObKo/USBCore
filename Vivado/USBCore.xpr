@@ -36,13 +36,13 @@
     <Option Name="WTVcsLaunchSim" Val="0"/>
     <Option Name="WTRivieraLaunchSim" Val="0"/>
     <Option Name="WTActivehdlLaunchSim" Val="0"/>
-    <Option Name="WTXSimExportSim" Val="11"/>
-    <Option Name="WTModelSimExportSim" Val="11"/>
-    <Option Name="WTQuestaExportSim" Val="11"/>
-    <Option Name="WTIesExportSim" Val="11"/>
-    <Option Name="WTVcsExportSim" Val="11"/>
-    <Option Name="WTRivieraExportSim" Val="11"/>
-    <Option Name="WTActivehdlExportSim" Val="11"/>
+    <Option Name="WTXSimExportSim" Val="12"/>
+    <Option Name="WTModelSimExportSim" Val="12"/>
+    <Option Name="WTQuestaExportSim" Val="12"/>
+    <Option Name="WTIesExportSim" Val="12"/>
+    <Option Name="WTVcsExportSim" Val="12"/>
+    <Option Name="WTRivieraExportSim" Val="12"/>
+    <Option Name="WTActivehdlExportSim" Val="12"/>
     <Option Name="GenerateIPUpgradeLog" Val="TRUE"/>
     <Option Name="XSimRadix" Val="hex"/>
     <Option Name="XSimTimeUnit" Val="ns"/>
@@ -73,6 +73,13 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
+      <File Path="$PPRDIR/../USB/usb_state_controller.sv">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
       <File Path="$PPRDIR/../ULPI/ulpi_controller.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -86,24 +93,43 @@
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_uartlite_0_0/MicroblazeSystem_axi_uartlite_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_lmb_bram_if_cntlr_1_0/MicroblazeSystem_lmb_bram_if_cntlr_1_0.xci"/>
         <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_proc_sys_reset_0_0/MicroblazeSystem_proc_sys_reset_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_intc_0_0/MicroblazeSystem_axi_intc_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xbar_1/MicroblazeSystem_xbar_1.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_interconnect_0_0/MicroblazeSystem_axi_interconnect_0_0.xci"/>
         <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_mig_7series_0_0/MicroblazeSystem_mig_7series_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_quad_spi_0_0/MicroblazeSystem_axi_quad_spi_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xlconcat_0_0/MicroblazeSystem_xlconcat_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_clk_wiz_0_0/MicroblazeSystem_clk_wiz_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_interconnect_0_1/MicroblazeSystem_axi_interconnect_0_1.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_blk_mem_gen_0_0/MicroblazeSystem_blk_mem_gen_0_0.xci"/>
-        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xbar_0/MicroblazeSystem_xbar_0.xci"/>
         <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_microblaze_0_0/MicroblazeSystem_microblaze_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xbar_1/MicroblazeSystem_xbar_1.xci"/>
         <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_mdm_0_0/MicroblazeSystem_mdm_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_intc_0_0/MicroblazeSystem_axi_intc_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_lmb_bram_if_cntlr_1_0/MicroblazeSystem_lmb_bram_if_cntlr_1_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xbar_0/MicroblazeSystem_xbar_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_uartlite_0_0/MicroblazeSystem_axi_uartlite_0_0.xci"/>
         <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_lmb_bram_if_cntlr_0_0/MicroblazeSystem_lmb_bram_if_cntlr_0_0.xci"/>
         <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_timer_0_0/MicroblazeSystem_axi_timer_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_interconnect_0_0/MicroblazeSystem_axi_interconnect_0_0.xci"/>
         <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_auto_us_0/MicroblazeSystem_auto_us_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_clk_wiz_0_0/MicroblazeSystem_clk_wiz_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_quad_spi_0_0/MicroblazeSystem_axi_quad_spi_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_axi_interconnect_0_1/MicroblazeSystem_axi_interconnect_0_1.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_blk_mem_gen_0_0/MicroblazeSystem_blk_mem_gen_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="ip/MicroblazeSystem_xlconcat_0_0/MicroblazeSystem_xlconcat_0_0.xci"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hdl/MicroblazeSystem.v"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="MicroblazeSystem_ooc.xdc"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hw_handoff/MicroblazeSystem_bd.tcl"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hw_handoff/MicroblazeSystem.hwh"/>
+        <CompFileExtendedInfo CompFileName="MicroblazeSystem.bd" FileRelPathName="hdl/MicroblazeSystem.hwdef"/>
+      </File>
+      <File Path="$PPRDIR/../Examples/ArtyDebug/arty_debug_vio.xcix">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PPRDIR/../Examples/ArtyDebug/arty_debug_vio/arty_debug_vio.xci">
+        <FileInfo>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
       </File>
       <File Path="$PPRDIR/../Examples/ArtyDebug/arty_debug.sv">
         <FileInfo>
