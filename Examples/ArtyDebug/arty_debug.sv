@@ -249,7 +249,7 @@ ulpi_controller ULPI_CTL (
     .tx(tx)
 );
 
-usb_state_controller (
+usb_state_controller STATE_CTL (
     .clk(ulpi_clk),
     .rst(ulpi_rst),
     
@@ -259,30 +259,18 @@ usb_state_controller (
     .ulpi_csr(ulpi_csr)
 );
 
+usb_trn TRN_CTL (
+    .clk(ulpi_clk),
+    .rst(ulpi_rst),
+    
+    .rx(rx),
+    .tx(tx)
+);
+
 arty_debug_vio VIO (
     .clk(ulpi_clk),
     .probe_out0(usb_ctl.connected)
 );
-
-(* mark_debug = "true" *)logic       dbg_rx_tvalid;
-(* mark_debug = "true" *)logic       dbg_rx_tready;
-(* mark_debug = "true" *)logic [7:0] dbg_rx_tdata;
-(* mark_debug = "true" *)logic       dbg_rx_tlast;
-
-(* mark_debug = "true" *)logic       dbg_tx_tvalid;
-(* mark_debug = "true" *)logic       dbg_tx_tready;
-(* mark_debug = "true" *)logic [7:0] dbg_tx_tdata;
-(* mark_debug = "true" *)logic       dbg_tx_tlast;
-
-assign dbg_rx_tvalid = rx.tvalid;
-assign dbg_rx_tready = rx.tready;
-assign dbg_rx_tdata  = rx.tdata;
-assign dbg_rx_tlast  = rx.tlast;
-
-assign dbg_tx_tvalid = tx.tvalid;
-assign dbg_tx_tready = tx.tready;
-assign dbg_tx_tdata  = tx.tdata;
-assign dbg_tx_tlast  = tx.tlast;
 
 assign ulpi_rst = 1'b0;
 
