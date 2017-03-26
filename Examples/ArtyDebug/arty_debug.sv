@@ -14,6 +14,7 @@ module arty_debug (
     output [0:0]    ddr3_ck_n,
     output [0:0]    ddr3_ck_p,
     output [0:0]    ddr3_cke,
+    output [0:0]    ddr3_cs_n,
     output [1:0]    ddr3_dm,
     inout  [15:0]   ddr3_dq,
     inout  [1:0]    ddr3_dqs_n,
@@ -52,7 +53,7 @@ logic           m_axi_reg_wready;
 logic [3:0]     m_axi_reg_wstrb;
 logic           m_axi_reg_wvalid;
 
-
+logic [31:0]    s_axi_mem_araddr;
 logic [1:0]     s_axi_mem_arburst;
 logic [3:0]     s_axi_mem_arcache;
 logic [3:0]     s_axi_mem_arid;

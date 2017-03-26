@@ -20,6 +20,10 @@ set_property PACKAGE_PIN T13 [get_ports {phy\.data[2]}]
 set_property PACKAGE_PIN U13 [get_ports {phy\.data[0]}]
 
 create_clock -period 16.666 -name ulpi_clk [get_ports {phy\.clk}]
-#set_input_delay -clock ulpi_clk -max 9.0 [get_ports {{phy\.data[*]} {phy\.dir} {phy\.nxt}}];
-#set_output_delay -clock ulpi_clk -max 6.0 [get_ports {{phy\.data[*]} {phy\.stp} {phy\.rst}}];
-#set_property IOB TRUE [get_ports {{phy\.data[*]} {phy\.dir} {phy\.nxt} {phy\.stp}}]
+
+# USB3300 timing from datasheet
+set_input_delay -clock ulpi_clk -min 2.0 [get_ports {{phy\.data[*]} {phy\.nxt}}];
+set_input_delay -clock ulpi_clk -max 5.0 [get_ports {{phy\.data[*]} {phy\.nxt}}];
+set_output_delay -clock ulpi_clk -max 5.0 [get_ports {{phy\.data[*]} {phy\.stp} {phy\.rst}}];
+#set_property IOB TRUE [get_ports {{phy\.data[*]} {phy\.nxt} {phy\.stp}}]
+

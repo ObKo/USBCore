@@ -10,15 +10,15 @@ module ulpi_io (
 
 logic clk_nobuf;
 
-IBUF  (.I(phy.clk),  .O(clk_nobuf));
-BUFG  (.I(clk_nobuf),.O(clk));
-OBUF  (.I(rst),      .O(phy.rst));
-IBUF  (.I(phy.dir),  .O(ulpi.dir));
-IBUF  (.I(phy.nxt),  .O(ulpi.nxt));
-OBUF  (.I(ulpi.stp), .O(phy.stp));
+IBUF CLK_IBUF (.I(phy.clk),  .O(clk_nobuf));
+BUFR CLK_BUFG (.I(clk_nobuf),.O(clk));
+OBUF RST_OBUF (.I(rst),      .O(phy.rst));
+IBUF DIR_IBUF (.I(phy.dir),  .O(ulpi.dir));
+IBUF NXT_IBUF (.I(phy.nxt),  .O(ulpi.nxt));
+OBUF STP_IBUF (.I(ulpi.stp), .O(phy.stp));
 
 genvar i; generate for (i = 0; i < 8; i = i + 1)
-    IOBUF (.I(ulpi.tx_data[i]), .O(ulpi.rx_data[i]), .T(ulpi.dir), .IO(phy.data[i]));
+    IOBUF DATA_IOBUF (.I(ulpi.tx_data[i]), .O(ulpi.rx_data[i]), .T(ulpi.dir), .IO(phy.data[i]));
 endgenerate
 
 endmodule
