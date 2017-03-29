@@ -16,34 +16,6 @@ ulpi_iface  ulpi();
 ulpi_axis_iface ulpi_rx();
 ulpi_axis_iface ulpi_tx();
 
-//(* mark_debug = "true" *)logic       dbg_dir;
-//(* mark_debug = "true" *)logic       dbg_nxt;
-//(* mark_debug = "true" *)logic       dbg_stp;
-//(* mark_debug = "true" *)logic [7:0] dbg_tx_data;
-//(* mark_debug = "true" *)logic [7:0] dbg_rx_data;
-
-//assign dbg_dir     = ulpi.dir;
-//assign dbg_nxt     = ulpi.nxt;
-//assign dbg_stp     = ulpi.stp;
-//assign dbg_tx_data = ulpi.tx_data;
-//assign dbg_rx_data = ulpi.rx_data;
-
-(* mark_debug = "true" *)logic [1:0] dbg_line_state;
-(* mark_debug = "true" *)logic [1:0] dbg_vbus_state;
-(* mark_debug = "true" *)logic       dbg_rx_active;
-(* mark_debug = "true" *)logic       dbg_rx_error;
-(* mark_debug = "true" *)logic       dbg_host_disconnect;
-(* mark_debug = "true" *)logic       dbg_id;
-(* mark_debug = "true" *)logic       dbg_update;
-
-assign dbg_line_state      = usb_state.line_state;    
-assign dbg_vbus_state      = usb_state.vbus_state;    
-assign dbg_rx_active       = usb_state.rx_active;     
-assign dbg_rx_error        = usb_state.rx_error;      
-assign dbg_host_disconnect = usb_state.host_disconnect;
-assign dbg_id              = usb_state.id;            
-assign dbg_update          = usb_state.update;
-
 ulpi_io IO (
     .phy(ulpi_phy),
     
@@ -62,6 +34,9 @@ ulpi_axis AXI (
     .rx(ulpi_rx),
     .tx(ulpi_tx)
 );
+
+logic ulpi_tx_busy;
+logic ulpi_grab_tx;
 
 logic ulpi_is_rx;
 assign ulpi_is_rx = ulpi_rx.tvalid;
@@ -105,12 +80,14 @@ always_ff @(posedge ulpi_clk) begin
         state <= S_IDLE;
     else case (state)
     S_IDLE:
-        if (ulpi_csr.awvalid) begin
-            state <= S_WAIT_WRITE;
-            csr_rw <= 1'b1;
-        end else if (ulpi_csr.arvalid) begin
-            state <= S_WRITE_ADDR;
-            csr_rw <= 1'b0;
+        if (~ulpi_tx_busy) begin
+            if (ulpi_csr.awvalid) begin
+                state <= S_WAIT_WRITE;
+                csr_rw <= 1'b1;
+            end else if (ulpi_csr.arvalid) begin
+                state <= S_WRITE_ADDR;
+                csr_rw <= 1'b0;
+            end
         end
         
     S_WAIT_WRITE:
@@ -148,6 +125,16 @@ always_ff @(posedge ulpi_clk) begin
     endcase
 end
 
+assign ulpi_grab_tx = (state != S_IDLE);
+
+always_ff @(posedge ulpi_clk)
+    if (ulpi_rst)
+        ulpi_tx_busy <= 1'b0;
+    else if (tx.tvalid & tx.tready & tx.tlast) 
+        ulpi_tx_busy <= 1'b0;
+    else if (tx.tvalid & ~ulpi_grab_tx)
+        ulpi_tx_busy <= 1'b1;
+
 always_ff @(posedge ulpi_clk) begin
     if (state == S_IDLE)
         if (ulpi_csr.awvalid)
@@ -164,8 +151,8 @@ always_ff @(posedge ulpi_clk)
     if ((state == S_READ_DATA) & ulpi_rx.tvalid & ulpi_rx.tuser[0] & ~ulpi_rx.tuser[1])
         csr_rd_data <= ulpi_rx.tdata;
         
-assign ulpi_csr.awready = (state == S_IDLE);
-assign ulpi_csr.arready = (state == S_IDLE) & ~ulpi_csr.awvalid;
+assign ulpi_csr.awready = (state == S_IDLE) & ~ulpi_tx_busy;
+assign ulpi_csr.arready = (state == S_IDLE) & ~ulpi_csr.awvalid & ~ulpi_tx_busy;
 
 assign ulpi_csr.wready = (state == S_WAIT_WRITE);
 
@@ -177,9 +164,10 @@ assign ulpi_csr.rvalid = (state == S_RESPONSE) & ~csr_rw;
 assign ulpi_csr.rdata = csr_rd_data;
 assign ulpi_csr.rresp = 2'b00;
 
-assign ulpi_tx.tvalid = (state == S_WRITE_ADDR) | (state == S_WRITE_DATA);
-assign ulpi_tx.tdata = (state == S_WRITE_ADDR) ? {1'b1, ~csr_rw, csr_reg} : csr_wr_data;
-assign ulpi_tx.tlast = (state == S_WRITE_DATA);
+assign ulpi_tx.tvalid = ulpi_grab_tx ? ((state == S_WRITE_ADDR) | (state == S_WRITE_DATA)) : tx.tvalid;
+assign ulpi_tx.tdata = ulpi_grab_tx ? ((state == S_WRITE_ADDR) ? {1'b1, ~csr_rw, csr_reg} : csr_wr_data) : tx.tdata;
+assign ulpi_tx.tlast = ulpi_grab_tx ? (state == S_WRITE_DATA) : tx.tlast;
+assign tx.tready = ulpi_grab_tx ? 1'b0 : ulpi_tx.tready;
 
 assign ulpi_rx.tready = 1'b1; // (state == S_READ_DATA)
 

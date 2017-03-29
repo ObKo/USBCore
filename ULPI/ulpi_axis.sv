@@ -33,6 +33,7 @@ always_ff @(posedge clk)
 // Is it USB data or PHY service data
 assign phydata = ulpi.dir & ~ulpi.nxt;
 
+// FIXME: Still combinational ulpi.rx_data[4]
 // RxActive: see ULPI spec v1.1, 3.8.2.4
 always_ff @(posedge clk)
     if (rst)
@@ -44,21 +45,60 @@ always_ff @(posedge clk)
     else if (dir_d & ~trn_d & phydata)
         rxactive <= ulpi.rx_data[4];
         
+always_ff @(posedge clk) begin
+    if (rst) begin
+        rx.tvalid <= '0;
+        rx.tdata <= '0;
+        rx.tuser <= '0;
+    end else begin
+        rx.tvalid <= ulpi.dir & ~turnaround;
+        rx.tdata <= ulpi.rx_data;
+        rx.tuser <= {rxactive, phydata};
+    end
+end
+
+logic [7:0] tx_reg;
+logic       tx_reg_valid;
+logic       tx_reg_last;
+logic       tx_reg_ready;
+
+always_ff @(posedge clk) begin
+    if (rst)
+        tx_reg_valid <= 1'b0;
+    else if (~tx_reg_valid & tx.tvalid)
+        tx_reg_valid <= 1'b1; 
+    else if (tx_reg_valid & ~tx.tvalid & tx_reg_ready)
+        tx_reg_valid <= 1'b0; 
+end
+
+always_ff @(posedge clk) begin
+    if (rst) begin
+        tx_reg <= '0;
+        tx_reg_last <= 1'b0;
+    end else if (tx.tvalid & tx_reg_ready) begin
+        tx_reg <= tx.tdata;
+        tx_reg_last <= tx.tlast;
+    end else if (~tx.tvalid & tx_reg_ready) begin
+        tx_reg <= '0;
+        tx_reg_last <= 1'b0;
+    end
+end
+assign tx_reg_ready = (~ulpi.dir & ~turnaround & ulpi.nxt & ~txstp) | ~tx_reg_valid;
+
 always_ff @(posedge clk)
     if (rst)
         txstp <= '0;
-    else if (tx.tvalid & tx.tready & tx.tlast)
+    else if (ulpi.dir)
+        txstp <= 1'b0;
+    else if (tx_reg_ready & tx_reg_last)
         txstp <= 1'b1;
     else
-        txstp <= 1'b0;        
+        txstp <= 1'b0;
 
-assign rx.tvalid = ulpi.dir & ~turnaround;
-assign rx.tdata = ulpi.rx_data;
-assign rx.tuser = {rxactive, phydata};
+assign tx.tready = tx_reg_ready;
 
-assign tx.tready = ~ulpi.dir & ~turnaround & ulpi.nxt & ~txstp;
-
-assign ulpi.stp = ulpi.dir ? ~rx.tready : txstp;
-assign ulpi.tx_data = (tx.tvalid & ~txstp) ? tx.tdata : 8'h00;
+// TODO: Assert RX STP when not ready
+assign ulpi.stp = txstp;
+assign ulpi.tx_data = tx_reg;
 
 endmodule
