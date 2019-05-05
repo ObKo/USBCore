@@ -12,19 +12,15 @@ module usbcore_debug (
 
 (* keep = "true" *)
 wire         ulpi_clk;
-(* mark_debug = "true" *)reg          ulpi_rst;
-(* mark_debug = "true" *)wire         ulpi_dir;
-(* mark_debug = "true" *)wire         ulpi_nxt;
-(* mark_debug = "true" *)wire         ulpi_stp;
-(* mark_debug = "true" *)wire [7:0]   ulpi_data_in;
-(* mark_debug = "true" *)wire [7:0]   ulpi_data_out;
+wire         ulpi_rst;
+wire         ulpi_dir;
+wire         ulpi_nxt;
+wire         ulpi_stp;
+wire [7:0]   ulpi_data_in;
+wire [7:0]   ulpi_data_out;
 
 // Dirty
-always @(posedge ulpi_clk, negedge rst_btn)
-    if (~rst_btn)
-        ulpi_rst <= 1'b1;
-    else
-        ulpi_rst <= 1'b0;
+assign ulpi_rst = ~rst_btn;
     
 ulpi_io IO (
     .phy_clk        (phy_clk),
@@ -45,7 +41,64 @@ ulpi_io IO (
     .ulpi_data_out  (ulpi_data_out)
 );
 
-assign ulpi_stp = 1'b0;
-assign ulpi_data_out = 8'h00;
+wire         usb_enable;
+
+wire [1:0]   line_state;
+wire [1:0]   vbus_state;
+wire         rx_active;
+wire         rx_error;
+wire         host_disconnect;
+
+wire         reg_en;
+wire         reg_rdy;
+wire         reg_we;
+wire [7:0]   reg_addr;
+wire [7:0]   reg_din;
+wire [7:0]   reg_dout;
+
+ulpi_ctl ULPI_CONTROLLER (
+    .ulpi_clk(ulpi_clk),
+    .ulpi_rst(ulpi_rst),
+    
+    .ulpi_dir(ulpi_dir),
+    .ulpi_nxt(ulpi_nxt),
+    .ulpi_stp(ulpi_stp),
+    .ulpi_data_in(ulpi_data_in),
+    .ulpi_data_out(ulpi_data_out),
+   
+    .line_state(line_state),
+    .vbus_state(vbus_state),
+    .rx_active(rx_active),
+    .rx_error(rx_error),
+    .host_disconnect(host_disconnect),
+    
+    .reg_en(reg_en),
+    .reg_rdy(reg_rdy),
+    .reg_we(reg_we),
+    .reg_addr(reg_addr),
+    .reg_din(reg_din),
+    .reg_dout(reg_dout)
+);
+
+usb_state_ctl STATE_CONTROLLER (
+    .clk(ulpi_clk),
+    .rst(ulpi_rst),
+    
+    .usb_enable(usb_enable),
+    
+    .vbus_state(vbus_state),
+  
+    .reg_en(reg_en),
+    .reg_rdy(reg_rdy),
+    .reg_we(reg_we),
+    .reg_addr(reg_addr),
+    .reg_din(reg_din),
+    .reg_dout(reg_dout)
+);
+
+debug_vio VIO (
+    .clk(ulpi_clk),
+    .probe_out0(usb_enable)
+);
 
 endmodule

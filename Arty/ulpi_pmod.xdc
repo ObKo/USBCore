@@ -19,3 +19,17 @@ set_property PACKAGE_PIN V14 [get_ports {phy_data[4]}]
 set_property PACKAGE_PIN T13 [get_ports {phy_data[2]}]
 set_property PACKAGE_PIN U13 [get_ports {phy_data[0]}]
 
+create_clock -period 16.666 -name phy_clk [get_ports phy_clk]
+
+set_input_delay  -clock [get_clocks phy_clk] -min  2.000 [get_ports {phy_dir}]
+set_input_delay  -clock [get_clocks phy_clk] -max  5.000 [get_ports {phy_dir}]
+set_max_delay 33.333 -from [get_ports {phy_dir}] -to [get_ports {phy_data[*]}]
+
+set_input_delay -clock [get_clocks phy_clk] -min 2.000 [get_ports phy_nxt]
+set_input_delay -clock [get_clocks phy_clk] -max 5.000 [get_ports phy_nxt]
+set_input_delay -clock [get_clocks phy_clk] -min 2.000 [get_ports {phy_data[*]}]
+set_input_delay -clock [get_clocks phy_clk] -max 5.000 [get_ports {phy_data[*]}]
+set_output_delay -clock [get_clocks phy_clk] -min 0.000 [get_ports {phy_data[*]}]
+set_output_delay -clock [get_clocks phy_clk] -max 5.000 [get_ports {phy_data[*]}]
+set_output_delay -clock [get_clocks phy_clk] -min 0.000 [get_ports phy_stp]
+set_output_delay -clock [get_clocks phy_clk] -max 5.000 [get_ports phy_stp]
