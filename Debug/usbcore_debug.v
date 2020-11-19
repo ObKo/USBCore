@@ -56,6 +56,8 @@ wire [7:0]   reg_addr;
 wire [7:0]   reg_din;
 wire [7:0]   reg_dout;
 
+wire         axis_rx_tready;
+
 ulpi_ctl ULPI_CONTROLLER (
     .ulpi_clk(ulpi_clk),
     .ulpi_rst(ulpi_rst),
@@ -77,7 +79,12 @@ ulpi_ctl ULPI_CONTROLLER (
     .reg_we(reg_we),
     .reg_addr(reg_addr),
     .reg_din(reg_din),
-    .reg_dout(reg_dout)
+    .reg_dout(reg_dout),
+    
+    .axis_rx_tdata(),
+    .axis_rx_tlast(),
+    .axis_rx_tvalid(),
+    .axis_rx_tready(axis_rx_tready)
 );
 
 usb_state_ctl STATE_CONTROLLER (
@@ -98,7 +105,8 @@ usb_state_ctl STATE_CONTROLLER (
 
 debug_vio VIO (
     .clk(ulpi_clk),
-    .probe_out0(usb_enable)
+    .probe_out0(usb_enable),
+    .probe_out1(axis_rx_tready)
 );
 
 endmodule

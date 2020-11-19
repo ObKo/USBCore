@@ -24,9 +24,9 @@ localparam S_REG_IDLE = 0,
            S_REG_WAIT = 2,
            S_REG_DONE = 3;
            
-(* mark_debug = "true" *)reg  [1:0]      state;
-(* mark_debug = "true" *)reg  [1:0]      reg_state;
-(* mark_debug = "true" *)reg             connecting;
+reg  [1:0]      state;
+reg  [1:0]      reg_state;
+reg             connecting;
 
 always @(posedge clk) begin
     if (rst)

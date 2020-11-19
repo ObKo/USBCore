@@ -1,156 +1,253 @@
 module ulpi_ctl(
     input  wire         ulpi_clk,
-    (* mark_debug = "true" *)input  wire         ulpi_rst,
+    input  wire         ulpi_rst,
     
-    (* mark_debug = "true" *)input  wire         ulpi_dir,
-    (* mark_debug = "true" *)input  wire         ulpi_nxt,
-    (* mark_debug = "true" *)output wire         ulpi_stp,
-    (* mark_debug = "true" *)input  wire [7:0]   ulpi_data_in,
-    (* mark_debug = "true" *)output wire [7:0]   ulpi_data_out,
+    input  wire         ulpi_dir,
+    input  wire         ulpi_nxt,
+    output reg          ulpi_stp,
+    input  wire [7:0]   ulpi_data_in,
+    output reg  [7:0]   ulpi_data_out,
     
-    (* mark_debug = "true" *)output wire [1:0]   line_state,
-    (* mark_debug = "true" *)output wire [1:0]   vbus_state,
-    (* mark_debug = "true" *)output wire         rx_active,
-    (* mark_debug = "true" *)output wire         rx_error,
-    (* mark_debug = "true" *)output wire         host_disconnect,
+    output reg  [1:0]   line_state,
+    output reg  [1:0]   vbus_state,
+    output reg          rx_active,
+    output reg          rx_error,
+    output reg          host_disconnect,
     
     // ULPI PHY registers port, similar to xilinx's DRP
-    (* mark_debug = "true" *)input  wire         reg_en,
-    (* mark_debug = "true" *)output wire         reg_rdy,
-    (* mark_debug = "true" *)input  wire         reg_we,
-    (* mark_debug = "true" *)input  wire [7:0]   reg_addr,
-    (* mark_debug = "true" *)input  wire [7:0]   reg_din,
-    (* mark_debug = "true" *)output wire [7:0]   reg_dout
+    input  wire         reg_en,
+    output reg          reg_rdy,
+    input  wire         reg_we,
+    input  wire [7:0]   reg_addr,
+    input  wire [7:0]   reg_din,
+    output reg  [7:0]   reg_dout,
+    
+    output reg  [7:0]   axis_rx_tdata,
+    output reg          axis_rx_tlast,
+    output reg          axis_rx_error,
+    output reg          axis_rx_tvalid,
+    input  wire         axis_rx_tready
 );
 
-localparam S_REG_IDLE = 0,
-           S_REG_WR_ADDR = 1,
-           S_REG_WR_DATA = 2,
-           S_REG_RD_DATA_TURN = 3,
-           S_REG_RD_DATA = 4,
-           S_REG_DONE = 5;
+localparam S_RESET = 0,
+           S_TX_IDLE = 1,
+           S_RX_DATA = 2,
+           S_RX_CMD = 3,
+           S_RX_ERROR = 4,
+           S_RX_ERROR_WAIT = 5,
+           S_REG_ADDR = 6,
+           S_REG_EXT_ADDR = 7,
+           S_REG_READ = 8,
+           S_REG_WRITE = 9,
+           S_REG_STP = 10;
 
-(* mark_debug = "true" *)wire        turnaround;
-(* mark_debug = "true" *)wire        rx_cmd;
+reg  [3:0]  state;
+wire        trn;
+wire        rx_cmd;
+wire [1:0]  rx_cmd_line_state;
+wire [1:0]  rx_cmd_vbus_state;
+wire        rx_cmd_rx_active;
+wire        rx_cmd_rx_error;
+wire        rx_is_error;
+wire        rx_cmd_host_disconnect;
+wire        rx_active_start, rx_active_end;
 
-reg         reg_we_reg;
-reg  [7:0]  reg_addr_reg;
-reg  [7:0]  reg_din_reg;
-reg  [7:0]  reg_dout_reg;
-(* mark_debug = "true" *)reg  [2:0]  reg_state;
+reg         csr_need_op;
+reg         csr_write;
+reg         csr_extended;
+reg [7:0]   csr_address;
+reg [7:0]   csr_data;
 
-reg         ulpi_dir_d;
-reg         rx_active_reg, rx_error_reg, host_disconnect_reg;
-reg [1:0]   line_state_reg;
-reg [1:0]   vbus_state_reg;
-
-reg [1:0]   ulpi_stp_reg;
-reg [7:0]   ulpi_data_out_reg;
-
+reg dir_prev;
 always @(posedge ulpi_clk)
-    ulpi_dir_d <= ulpi_dir;
-assign turnaround = ulpi_dir_d != ulpi_dir;
+    dir_prev <= ulpi_dir;
 
-assign rx_cmd = ~turnaround & ulpi_dir & ~ulpi_nxt & (reg_state != S_REG_RD_DATA);
-
-always @(posedge ulpi_clk)
-    if (ulpi_rst)
-        rx_active_reg <= 1'b0;
-    else if (turnaround & ~ulpi_dir)
-        rx_active_reg <= 1'b0;
-    else if (turnaround & ulpi_dir & ulpi_nxt)
-        rx_active_reg <= 1'b1;
-    else if (rx_cmd)
-        rx_active_reg <= ulpi_data_in[4];
-
-always @(posedge ulpi_clk) begin
-    if (ulpi_rst) begin
-        rx_error_reg <= 1'b0;
-        host_disconnect_reg <= 1'b0;
-        line_state_reg <= 2'b00;
-        vbus_state_reg <= 2'b00;
-    end else if (rx_cmd) begin
-        rx_error_reg <= (ulpi_data_in[5:4] == 2'b11);
-        host_disconnect_reg <= (ulpi_data_in[5:4] == 2'b10);
-        line_state_reg <= ulpi_data_in[1:0];
-        vbus_state_reg <= ulpi_data_in[3:2];
-    end
-end
+assign trn = ulpi_dir != dir_prev;
+assign rx_cmd = ulpi_dir & ~trn & ~ulpi_nxt & (state != S_REG_READ);
+assign rx_cmd_line_state = ulpi_data_in[1:0];
+assign rx_cmd_vbus_state = ulpi_data_in[3:2];
+assign rx_cmd_rx_active = ulpi_data_in[4];
+assign rx_cmd_rx_error = (ulpi_data_in[5:4] == 2'b11);
+assign rx_cmd_host_disconnect = (ulpi_data_in[5:4] == 2'b10);
 
 always @(posedge ulpi_clk) begin
     if (ulpi_rst)
-        reg_state <= S_REG_IDLE;
-    else case (reg_state)
-    S_REG_IDLE:
-        if (reg_en)
-            reg_state <= S_REG_WR_ADDR;
-       
-    S_REG_WR_ADDR:
-        if (~turnaround & ~ulpi_dir & ulpi_nxt) //TODO: & granted
-            reg_state <= reg_we_reg ? S_REG_WR_DATA : S_REG_RD_DATA_TURN;
+        state <= S_RESET;
+    else if (((state == S_TX_IDLE) | (state == S_REG_ADDR) | (state == S_REG_EXT_ADDR) | 
+              (state == S_REG_WRITE) | (state == S_REG_STP)) & ulpi_dir) begin
+        if (trn & ulpi_nxt)
+            state <= S_RX_DATA;
+        else
+            state <= S_RX_CMD;
+    end else case (state)
+    S_RESET:
+        if (ulpi_dir)
+            state <= S_TX_IDLE;
+    
+    S_TX_IDLE:
+        if (csr_need_op)
+            state <= S_REG_ADDR;
+    
+    S_RX_DATA:
+        // TODO: handle stp
+        if (~ulpi_dir)
+            state <= S_TX_IDLE;
+        else if (rx_is_error)
+            state <= S_RX_ERROR;
+        else if (rx_cmd & ~rx_cmd_rx_active)
+            state <= S_RX_CMD;
         
-    S_REG_WR_DATA:
-        if (turnaround)
-            reg_state <= S_REG_WR_ADDR;
-        else if (ulpi_nxt)
-            reg_state <= S_REG_DONE;
-    
-    S_REG_RD_DATA_TURN:
-        if (turnaround & ulpi_dir & ulpi_nxt)
-            reg_state <= S_REG_WR_ADDR;
-        else if (turnaround & ulpi_dir)
-            reg_state <= S_REG_RD_DATA;
+    S_RX_CMD:
+        if (~ulpi_dir)
+            state <= S_TX_IDLE;
+        else if (rx_is_error)
+            state <= S_RX_ERROR;
+        else if (rx_cmd & rx_cmd_rx_active)
+            state <= S_RX_DATA;
             
-    S_REG_RD_DATA:
-        if (rx_active_reg | ulpi_nxt)
-            reg_state <= S_REG_WR_ADDR;
-        else 
-            reg_state <= S_REG_DONE;     
+    S_RX_ERROR:
+        state <= S_RX_ERROR_WAIT;
+            
+    S_RX_ERROR_WAIT:
+        if (axis_rx_tlast & axis_rx_tvalid & axis_rx_tready)
+            state <= S_RX_CMD;
+        
+    S_REG_ADDR:
+        if (ulpi_nxt & csr_extended)
+            state <= S_REG_EXT_ADDR;
+        else if (ulpi_nxt)
+            state <= csr_write ? S_REG_WRITE : S_REG_READ;
     
-    S_REG_DONE:
-        reg_state <= S_REG_IDLE;
-    
+    S_REG_EXT_ADDR:
+        if (ulpi_nxt)
+            state <= csr_write ? S_REG_WRITE : S_REG_READ;
+            
+    S_REG_WRITE:
+        if (ulpi_nxt)
+            state <= S_REG_STP;
+            
+    S_REG_STP:
+        state <= S_TX_IDLE;
+        
+    S_REG_READ:
+        if (ulpi_dir & trn & ulpi_nxt)
+            state <= S_RX_DATA;
+        else if (ulpi_dir & ~trn)
+            state <= S_RX_CMD;           
+        
     endcase
 end
 
 always @(posedge ulpi_clk) begin
-    if ((reg_state == S_REG_IDLE) & reg_en) begin
-        reg_we_reg   <= reg_we;
-        reg_addr_reg <= reg_addr;
-        reg_din_reg  <= reg_din;
-    end        
+    if (ulpi_rst) begin
+        line_state <= 2'b00;
+        vbus_state <= 2'b00;
+        rx_error <= 1'b0;
+        host_disconnect <= 1'b0;
+    end else if (rx_cmd) begin
+        line_state <= rx_cmd_line_state;
+        vbus_state <= rx_cmd_vbus_state;
+        rx_error <= rx_cmd_rx_error;
+        host_disconnect <= rx_cmd_host_disconnect;
+    end
 end
 
+assign rx_active_start = ~rx_active & (ulpi_dir & trn & ulpi_nxt | (rx_cmd & rx_cmd_rx_active));
+assign rx_active_end = rx_active & (~ulpi_dir | (rx_cmd & ~rx_cmd_rx_active));
 always @(posedge ulpi_clk)
-    if ((reg_state == S_REG_RD_DATA) & ~rx_active_reg & ~ulpi_nxt)
-        reg_dout_reg <= ulpi_data_in;
+    if (ulpi_rst) 
+        rx_active <= 1'b0;
+    else if (rx_active_end)
+        rx_active <= 1'b0;
+    else if (rx_active_start)
+        rx_active <= 1'b1;
 
+wire csr_done;
+assign csr_done = csr_write ? (state == S_REG_STP) : ((state == S_REG_READ) & ulpi_dir & ~trn);
+
+always @(posedge ulpi_clk) begin
+    if (ulpi_rst) 
+        csr_need_op <= 1'b0;
+    else if (csr_need_op & csr_done)
+        csr_need_op <= 1'b0;
+    else if (csr_need_op & csr_done)
+        csr_need_op <= 1'b0;
+    else if (reg_en & ~csr_need_op) begin
+        csr_need_op <= 1'b1;
+        csr_write <= reg_we;
+        csr_address <= reg_addr;
+        csr_extended <= (reg_addr[7:6] != 2'b00);
+        if (reg_we)
+            csr_data <= reg_din;
+    end
+end
+
+always @(posedge ulpi_clk) begin
+    if (ulpi_rst) 
+        reg_rdy <= 1'b0;
+    else if (csr_need_op & csr_done) begin
+        reg_rdy <= 1'b1;
+        if (~csr_write)
+            reg_dout <= ulpi_data_in;
+    end else
+        reg_rdy <= 1'b0;
+end
+
+reg [7:0]   axis_buffer;
+reg         axis_buffer_valid;
 always @(posedge ulpi_clk)
-    if ((reg_state == S_REG_WR_DATA) & ~turnaround)
-        ulpi_stp_reg <= 1'b1;
-    else
-        ulpi_stp_reg <= 1'b0; 
+    if (rx_active & ulpi_nxt)
+        axis_buffer <= ulpi_data_in;
+        
+always @(posedge ulpi_clk)
+    if (ulpi_rst)
+        axis_buffer_valid <= 1'b0;
+    else if (rx_active_end)
+        axis_buffer_valid <= 1'b0;
+    else if ((state == S_RX_DATA) & rx_active & ulpi_nxt)
+        axis_buffer_valid <= 1'b1;
+        
+wire ulpi_data_valid;
+assign ulpi_data_valid = (state == S_RX_DATA) & (rx_active & ulpi_nxt | rx_active_end);
+
+always @(posedge ulpi_clk) begin
+    if (ulpi_rst)  begin
+        axis_rx_tvalid <= 1'b0;
+        axis_rx_tlast <= 1'b0;
+        axis_rx_error <= 1'b0;
+    end else if ((state == S_RX_ERROR_WAIT) & ~axis_rx_tvalid) begin
+        axis_rx_tvalid <= 1'b1;
+        axis_rx_tlast <= 1'b1;
+        axis_rx_error <= 1'b1;
+    end else if (axis_buffer_valid & ulpi_data_valid) begin
+        axis_rx_tvalid <= 1'b1;
+        axis_rx_tdata <= axis_buffer;
+        axis_rx_tlast <= rx_active_end;
+        axis_rx_error <= 1'b0;
+    end else if (axis_rx_tvalid & axis_rx_tready) begin
+        axis_rx_tvalid <= 1'b0;
+    end
+end
+assign rx_is_error = rx_cmd & rx_cmd_rx_error | axis_rx_tvalid & ~axis_rx_tready & ulpi_data_valid;
 
 always @(*) begin
-    if (reg_state == S_REG_WR_ADDR)
-        ulpi_data_out_reg <= {reg_we_reg ? 2'b10 : 2'b11, reg_addr_reg[5:0]};
-    else if (reg_state == S_REG_WR_DATA)
-        ulpi_data_out_reg <= reg_din_reg;
+    if (((state == S_TX_IDLE) & csr_need_op) | (state == S_REG_ADDR))
+        ulpi_data_out = {(csr_write ? 2'b10 : 2'b11), (csr_extended ? 6'b101111 : csr_address[5:0])};
+    else if (state == S_REG_EXT_ADDR)
+        ulpi_data_out = csr_address;
+    else if (state == S_REG_WRITE) 
+        ulpi_data_out = csr_data;
     else
-        ulpi_data_out_reg <= 8'h00;
+        ulpi_data_out = 8'h00;
 end
 
-assign line_state = line_state_reg;
-assign rx_active = rx_active_reg;
-assign rx_error = rx_error_reg;
-assign host_disconnect = host_disconnect_reg;
-assign vbus_state = vbus_state_reg;
-
-assign reg_rdy = (reg_state == S_REG_DONE);
-assign reg_dout = reg_dout_reg;
-
-assign ulpi_stp = ulpi_stp_reg;
-
-assign ulpi_data_out = ulpi_data_out_reg;
+always @(*) begin
+    if (state == S_REG_STP)
+        ulpi_stp = 1'b1;
+    else if (state == S_RX_ERROR)
+        ulpi_stp = 1'b1;
+    else
+        ulpi_stp = 1'b0;
+end
 
 endmodule
