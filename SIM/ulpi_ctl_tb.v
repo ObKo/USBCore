@@ -30,6 +30,11 @@ wire         axis_rx_error;
 wire         axis_rx_tvalid;
 reg          axis_rx_tready;
 
+wire  [7:0]  axis_tx_tdata;
+wire         axis_tx_tlast;
+wire         axis_tx_tvalid;
+wire         axis_tx_tready;
+
 ulpi_ctl CTL (
     .ulpi_clk(ulpi_clk),
     .ulpi_rst(ulpi_rst),
@@ -57,7 +62,12 @@ ulpi_ctl CTL (
     .axis_rx_tlast(axis_rx_tlast),
     .axis_rx_error(axis_rx_error),
     .axis_rx_tvalid(axis_rx_tvalid),
-    .axis_rx_tready(axis_rx_tready)
+    .axis_rx_tready(axis_rx_tready),
+    
+    .axis_tx_tdata(axis_tx_tdata),
+    .axis_tx_tlast(axis_tx_tlast),
+    .axis_tx_tvalid(axis_tx_tvalid),
+    .axis_tx_tready(axis_tx_tready)
 );
 
 ulpi_phy_bfm ULPI (
@@ -88,10 +98,27 @@ always @(posedge ulpi_clk) begin
     end
 end
 
+reg [7:0] axis_tx_data[1024];
+reg [9:0] axis_tx_count = 10'h000;
+reg       axis_tx_start;
+reg       axis_tx_done;
+reg [9:0] axis_tx_counter = 10'h3FF;
+
+always @(posedge ulpi_clk) begin
+    if (axis_tx_start)
+        axis_tx_counter <= axis_tx_count - 1;
+    else if (axis_tx_tvalid & axis_tx_tready)
+        axis_tx_counter <= axis_tx_counter - 1;
+end
+assign axis_tx_tvalid = axis_tx_counter != 10'h3FF;
+assign axis_tx_tlast = axis_tx_counter == 10'h000;
+assign axis_tx_tdata = axis_tx_data[axis_tx_count - axis_tx_counter - 1];
+assign axis_tx_done = axis_tx_tvalid & axis_tx_tready & axis_tx_tlast;
+
 reg [9:0] i;
 initial begin
     $dumpfile("ulpi_ctl_tb.lxt");
-    $dumpvars(0, CTL);
+    $dumpvars(0, CTL, ulpi_ctl_tb);
     
     ulpi_rst = 1'b1;
     #100
@@ -270,6 +297,33 @@ initial begin
     
     assert((axis_rx_was_last == 1'b1) && (axis_rx_was_error == 1'b1));
     
+    // Test ACK send
+    axis_tx_data[0] = 8'h02;
+    axis_tx_count = 1;
+    axis_tx_start = 1'b1;
+    ULPI.cycle();
+    axis_tx_start = 1'b0;
+    @(posedge axis_tx_done);
+    ULPI.cycle();
+    
+    assert(ULPI.data[0][3:0] == axis_tx_data[0][3:0]);
+    ULPI.cycle();
+
+    // Test SOF send
+    axis_tx_data[0] = 8'h05;
+    axis_tx_data[1] = 8'h00;
+    axis_tx_data[2] = 8'hF8;
+    axis_tx_count = 3;
+    axis_tx_start = 1'b1;
+    ULPI.cycle();
+    axis_tx_start = 1'b0;
+    @(posedge axis_tx_done);
+    ULPI.cycle();
+    
+    assert(ULPI.data[0][3:0] == axis_tx_data[0][3:0]);
+    for (i = 1; i < 3; i = i + 1)
+        assert(ULPI.data[i] == axis_tx_data[i]);
+            
     #100
     $finish();
 end

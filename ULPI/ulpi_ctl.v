@@ -26,20 +26,28 @@ module ulpi_ctl(
     output reg          axis_rx_tlast,
     output reg          axis_rx_error,
     output reg          axis_rx_tvalid,
-    input  wire         axis_rx_tready
+    input  wire         axis_rx_tready,
+    
+    input  wire [7:0]   axis_tx_tdata,
+    input  wire         axis_tx_tlast,
+    input  wire         axis_tx_tvalid,
+    output reg          axis_tx_tready
 );
 
 localparam S_RESET = 0,
            S_TX_IDLE = 1,
-           S_RX_DATA = 2,
-           S_RX_CMD = 3,
-           S_RX_ERROR = 4,
-           S_RX_ERROR_WAIT = 5,
-           S_REG_ADDR = 6,
-           S_REG_EXT_ADDR = 7,
-           S_REG_READ = 8,
-           S_REG_WRITE = 9,
-           S_REG_STP = 10;
+           S_TX_DATA = 2,
+           S_TX_DONE = 3,
+           S_TX_ERROR = 4,
+           S_RX_DATA = 5,
+           S_RX_CMD = 6,
+           S_RX_ERROR = 7,
+           S_RX_ERROR_WAIT = 8,
+           S_REG_ADDR = 9,
+           S_REG_EXT_ADDR = 10,
+           S_REG_READ = 11,
+           S_REG_WRITE = 12,
+           S_REG_STP = 13;
 
 reg  [3:0]  state;
 wire        trn;
@@ -58,6 +66,9 @@ reg         csr_extended;
 reg [7:0]   csr_address;
 reg [7:0]   csr_data;
 
+reg         tx_data_fail;
+reg         tx_is_pid;
+
 reg dir_prev;
 always @(posedge ulpi_clk)
     dir_prev <= ulpi_dir;
@@ -74,7 +85,7 @@ always @(posedge ulpi_clk) begin
     if (ulpi_rst)
         state <= S_RESET;
     else if (((state == S_TX_IDLE) | (state == S_REG_ADDR) | (state == S_REG_EXT_ADDR) | 
-              (state == S_REG_WRITE) | (state == S_REG_STP)) & ulpi_dir) begin
+              (state == S_REG_WRITE) | (state == S_REG_STP) | (state == S_TX_DATA)) & ulpi_dir) begin
         if (trn & ulpi_nxt)
             state <= S_RX_DATA;
         else
@@ -85,11 +96,24 @@ always @(posedge ulpi_clk) begin
             state <= S_TX_IDLE;
     
     S_TX_IDLE:
-        if (csr_need_op)
+        if (axis_tx_tvalid & ~tx_data_fail)
+            state <= S_TX_DATA;
+        else if (csr_need_op)
             state <= S_REG_ADDR;
+            
+    S_TX_DATA:
+        if (~axis_tx_tvalid)
+            state <= S_TX_ERROR;
+        else if (axis_tx_tvalid & axis_tx_tready & axis_tx_tlast)
+            state <= S_TX_DONE;
+            
+    S_TX_ERROR:
+        state <= S_TX_IDLE;
+        
+    S_TX_DONE:
+        state <= S_TX_IDLE;
     
     S_RX_DATA:
-        // TODO: handle stp
         if (~ulpi_dir)
             state <= S_TX_IDLE;
         else if (rx_is_error)
@@ -136,6 +160,26 @@ always @(posedge ulpi_clk) begin
             state <= S_RX_CMD;           
         
     endcase
+end
+
+always @(posedge ulpi_clk) begin
+    if (ulpi_rst)
+        tx_data_fail <= 1'b0;
+    else if (axis_tx_tvalid & axis_tx_tready & axis_tx_tlast)
+        tx_data_fail <= 1'b0;
+    else if ((state == S_TX_DATA) & ~axis_tx_tvalid)
+        tx_data_fail <= 1'b1;
+    else if ((state == S_TX_DATA) & ulpi_dir)
+        tx_data_fail <= 1'b1;
+end
+
+always @(posedge ulpi_clk) begin
+    if (ulpi_rst)
+        tx_is_pid <= 1'b1;
+    else if (axis_tx_tvalid & axis_tx_tready & axis_tx_tlast)
+        tx_is_pid <= 1'b1;
+    else if (axis_tx_tvalid & axis_tx_tready)
+        tx_is_pid <= 1'b0;
 end
 
 always @(posedge ulpi_clk) begin
@@ -231,12 +275,18 @@ end
 assign rx_is_error = rx_cmd & rx_cmd_rx_error | axis_rx_tvalid & ~axis_rx_tready & ulpi_data_valid;
 
 always @(*) begin
-    if (((state == S_TX_IDLE) & csr_need_op) | (state == S_REG_ADDR))
+    if ((state == S_TX_IDLE) & axis_tx_tvalid & ~tx_data_fail)
+        ulpi_data_out = {4'b0100, axis_tx_tdata[3:0]};
+    else if (((state == S_TX_IDLE) & csr_need_op) | (state == S_REG_ADDR))
         ulpi_data_out = {(csr_write ? 2'b10 : 2'b11), (csr_extended ? 6'b101111 : csr_address[5:0])};
     else if (state == S_REG_EXT_ADDR)
         ulpi_data_out = csr_address;
     else if (state == S_REG_WRITE) 
         ulpi_data_out = csr_data;
+    else if (state == S_TX_DATA) 
+        ulpi_data_out = tx_is_pid ? {4'b0100, axis_tx_tdata[3:0]} : axis_tx_tdata;
+    else if (state == S_TX_ERROR)
+        ulpi_data_out = 8'hFF;
     else
         ulpi_data_out = 8'h00;
 end
@@ -246,8 +296,23 @@ always @(*) begin
         ulpi_stp = 1'b1;
     else if (state == S_RX_ERROR)
         ulpi_stp = 1'b1;
+    else if (state == S_TX_DONE)
+        ulpi_stp = 1'b1;
+    else if (state == S_TX_ERROR)
+        ulpi_stp = 1'b1;
     else
         ulpi_stp = 1'b0;
 end
+
+always @(*) begin
+    if (tx_data_fail)
+        axis_tx_tready = 1'b1;
+    else if (state == S_TX_DATA)
+        axis_tx_tready = ulpi_nxt;
+    else
+        axis_tx_tready = 1'b0;
+end
+
+
 
 endmodule

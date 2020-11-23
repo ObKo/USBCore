@@ -90,6 +90,38 @@ begin
     ulpi_data_in = 8'h00;
 end endtask
 
+
+task tx_data;
+    input fullspeed;
+    reg [7:0] i;
+    reg [5:0] j;
+    reg was_stp;
+begin
+    idle();
+    cycle();
+    if (fullspeed) 
+        for (j = 0; j < 40; j = j + 1)
+            cycle();
+    
+    was_stp = 1'b0;
+    i = 0;
+    while (!was_stp) begin
+        if (ulpi_stp)
+            was_stp = 1'b1;
+        else begin
+            data[i] = ulpi_data_out;
+            ulpi_nxt = 1'b1;
+            cycle();
+            if (fullspeed) 
+                for (j = 0; j < 40; j = j + 1)
+                    cycle();
+        end
+        i = i + 1;
+    end
+    idle();
+    cycle();
+end endtask
+
 task reg_read;
     input [5:0] addr;
 begin
@@ -184,7 +216,9 @@ initial begin
             cycle();
         end else begin
             cycle();
-            if ((ulpi_dir == 1'b0) && (ulpi_data_out[7:0] == 8'b11101111))
+            if ((ulpi_dir == 1'b0) && (ulpi_data_out[7:6] == 2'b01))
+                tx_data(1'b0);
+            else if ((ulpi_dir == 1'b0) && (ulpi_data_out[7:0] == 8'b11101111))
                 reg_read_ext();
             else if ((ulpi_dir == 1'b0) && (ulpi_data_out[7:0] == 8'b10101111))
                 reg_write_ext();
